@@ -1,0 +1,153 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  profile      Profile?
+  bookings     Booking[]
+  sessions     Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Profile {
+  id        String   @id
+  fullName  String   @default("") @map("full_name")
+  phone     String?
+  company   String?
+  role      String   @default("customer")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Booking {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  workspaceId   String   @map("workspace_id")
+  workspaceName String   @map("workspace_name")
+  locationSlug  String   @map("location_slug")
+  bookingDate   DateTime @map("booking_date") @db.Date
+  startTime     String   @map("start_time")
+  endTime       String   @map("end_time")
+  totalAmount      BigInt   @default(0) @map("total_amount")
+  method        String   @default("card")
+  status        String   @default("confirmed")
+  reference     String
+  accessCode    String   @map("access_code")
+  createdAt     DateTime @default(now()) @map("created_at")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guests        Guest[]
+
+  @@map("bookings")
+}
+
+model Guest {
+  id          String   @id @default(uuid())
+  bookingId   String   @map("booking_id")
+  guestName   String   @map("guest_name")
+  guestEmail  String?  @map("guest_email")
+  accessFrom  String?  @map("access_from")
+  accessUntil String?  @map("access_until")
+  status      String   @default("scheduled")
+  createdAt   DateTime @default(now()) @map("created_at")
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("guests")
+}
+
+model AdminSettings {
+  id                        Boolean  @id @default(true)
+  companyName               String   @default("TerraSpace") @map("company_name")
+  supportEmail              String?  @map("support_email")
+  currency                  String   @default("USD")
+  taxPercent                Decimal  @default(0) @map("tax_percent") @db.Decimal(5, 2)
+  cancellationWindowHours   Int      @default(24) @map("cancellation_window_hours")
+  advanceBookingDays        Int      @default(30) @map("advance_booking_days")
+  emailNotificationsEnabled Boolean  @default(true) @map("email_notifications_enabled")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  @@map("admin_settings")
+}
+
+
+model Location {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  address     String
+  city        String
+  imageUrl    String?  @map("image_url")
+  hours       String   @default("Mon–Sun 09:00–22:00")
+  access247   Boolean  @default(false) @map("access_247")
+  amenities   String[]
+  description        String   @default("")
+  latitude           Float?
+  longitude          Float?
+  accessRadiusMeters Int      @default(50) @map("access_radius_meters")
+  status             String   @default("active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  workspaces  Workspace[]
+
+  @@map("locations")
+}
+
+model Workspace {
+  id            String   @id @default(uuid())
+  locationSlug  String   @map("location_slug")
+  name          String
+  type          String
+  floor         String   @default("")
+  price         BigInt   @default(0)
+  unit          String   @default("hour")
+  amenities     String[]
+  availability  String   @default("available")
+  slots         String[]
+  imageUrl      String?  @map("image_url")
+  description   String   @default("")
+  cancellation  String   @default("")
+  simpleBooking Boolean  @default(false) @map("simple_booking")
+  calendarSync  String?  @map("calendar_sync")
+  qrProvider    String?  @map("qr_provider")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  location      Location @relation(fields: [locationSlug], references: [slug], onDelete: Cascade)
+
+  @@index([locationSlug])
+  @@map("workspaces")
+}
+
+model Amenity {
+  id        String   @id @default(uuid())
+  name      String
+  nameId    String   @default("") @map("name_id")
+  category  String   @default("General")
+  icon      String   @default("tag")
+  status    String   @default("active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("amenities")
+}

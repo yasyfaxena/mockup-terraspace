@@ -1,0 +1,72 @@
+workflows:
+  android-workflow:
+    name: Android Build (APK)
+    max_build_duration: 60
+    environment:
+      java: 21
+      node: 20
+      groups:
+        - android_signing # optional, hanya perlu kalau nanti mau signed release build
+    scripts:
+      - name: Install dependencies
+        script: npm install
+      - name: Buat folder dist placeholder (dipakai server.url, isinya tidak dipakai)
+        script: |
+          mkdir -p dist
+          echo "placeholder" > dist/index.html
+      - name: Tambahkan platform Android jika belum ada
+        script: |
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+      - name: Sync Capacitor
+        script: npx cap sync android
+      - name: Build APK (debug, bisa langsung diinstall untuk testing)
+        script: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/**/*.apk
+    publishing:
+      email:
+        recipients:
+          - yasyfaxna@gmail.com
+
+  ios-workflow:
+    name: iOS Build
+    max_build_duration: 60
+    environment:
+      java: 21
+      node: 20
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install dependencies
+        script: npm install
+      - name: Buat folder dist placeholder
+        script: |
+          mkdir -p dist
+          echo "placeholder" > dist/index.html
+      - name: Tambahkan platform iOS jika belum ada
+        script: |
+          if [ ! -d "ios" ]; then
+            npx cap add ios
+          fi
+      - name: Sync Capacitor
+        script: npx cap sync ios
+      - name: Install CocoaPods
+        script: |
+          cd ios/App
+          pod install
+    # Build & signing iOS butuh setup Apple Developer account + sertifikat
+    # (App Store Connect API key / provisioning profile) yang dipasang lewat
+    # menu Codemagic > Team settings > Code signing identities. Ikuti wizard
+    # "iOS code signing" di dashboard Codemagic setelah workflow ini jalan
+    # sampai tahap 'pod install' dengan sukses.
+    artifacts:
+      - ios/App/build/**/*.ipa
+    publishing:
+      email:
+        recipients:
+          - yasyfaxna@gmail.com
