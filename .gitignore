@@ -2,3 +2,4 @@
 node_modules
 .lovable/
 dist/
+.vercel/
