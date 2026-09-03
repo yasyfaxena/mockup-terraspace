@@ -10,7 +10,6 @@
 - Tailwind CSS
 - React Hook Form
 - Zod
-- Capacitor
 
 ## 2. Frontend Architecture
 
