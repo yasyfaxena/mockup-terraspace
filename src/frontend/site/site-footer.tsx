@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import logoIcon from "@/frontend/assets/logo-icon.png";
+import { Hexagon } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
 export function SiteFooter() {
@@ -38,7 +38,7 @@ export function SiteFooter() {
       <div className="container-page grid gap-10 py-14 md:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div>
           <div className="flex items-center gap-2">
-            <img src={logoIcon} alt="TerraSpace" className="size-5 object-contain" />
+            <Hexagon className="size-5 text-primary" strokeWidth={1.6} />
             <span className="font-bold tracking-tight text-foreground">TerraSpace</span>
           </div>
           <p className="mt-3 max-w-xs text-xs text-muted-foreground leading-relaxed">
