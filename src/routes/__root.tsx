@@ -80,13 +80,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "TerraSpace" },
+      { title: "Terraspace" },
       {
         name: "description",
         content: "Coworking space booking with access ready on arrival.",
       },
-      { name: "author", content: "TerraSpace" },
-      { property: "og:title", content: "TerraSpace" },
+      { name: "author", content: "Terraspace" },
+      { property: "og:title", content: "Terraspace" },
       {
         property: "og:description",
         content: "Coworking space booking with access ready on arrival.",
@@ -105,7 +105,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      {
+        rel: "icon",
+        href: "/terraspace-icon.png",
+        type: "image/png",
+      },
     ],
   }),
 
