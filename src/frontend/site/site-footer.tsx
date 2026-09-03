@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import logoIcon from "@/src/assets/logo-icon.png";
+import logoIcon from "@/assets/logo-icon.png";
 import { useI18n } from "@/lib/i18n";
 
 export function SiteFooter() {
