@@ -107,7 +107,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         rel: "icon",
-        href: "/terraspace-icon.png",
+        href: "/logo-icon.png",
         type: "image/png",
       },
     ],
