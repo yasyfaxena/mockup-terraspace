@@ -273,7 +273,7 @@ Stores user-facing profile information used by the account/dashboard experience.
 | `full_name` | `VARCHAR(150)` | NO | `''` | User's display name |
 | `phone` | `VARCHAR(30)` | YES | `NULL` | Contact number |
 | `company` | `VARCHAR(150)` | YES | `NULL` | Company/organization |
-| `role` | `VARCHAR(30)` | NO | `'customer'` | `customer`, `staff`, `admin` |
+| `role` | `user_role` (ENUM) | NO | `'customer'` | `customer`, `staff`, `admin` |
 | `created_at` | `TIMESTAMPTZ` | NO | `now()` | Creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `now()` | Last update timestamp |
 
