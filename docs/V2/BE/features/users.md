@@ -28,7 +28,7 @@ The authenticated user's own profile. **Access:** Customer.
   "id": "usr_1",
   "email": "ana@example.com",
   "name": "Ana Putri",
-  "phone": "+628110000000",
+  "phone": "+60123456789",
   "company": "Acme",
   "image": null,
   "emailVerified": true,
@@ -44,6 +44,8 @@ The authenticated user's own profile. **Access:** Customer.
 
 `authMethods` lists linked login methods so the account page can show "Connected with Google". It exposes **only** `providerId` and `linkedAt` — never `password`, `accessToken`, `refreshToken` or `idToken`, which must not leave the repository layer.
 
+> **`image` is URL-only.** The field stores a link to an already-hosted image, not raw file bytes — there is no multipart/file upload in this spec yet. If the product needs users to upload an avatar file directly, that requires a separate endpoint (e.g. `POST /me/avatar` accepting `multipart/form-data`, storing the file, and writing the resulting URL back into `image`). That endpoint is not yet defined here and should be scoped as a follow-up.
+
 ---
 
 ## 2. `PATCH /me`
@@ -53,15 +55,15 @@ Update own profile. **Access:** Customer.
 ### Request
 
 ```json
-{ "name": "Ana Putri", "phone": "+628110000001", "company": "Acme Corp", "image": "https://…/me.jpg" }
+{ "name": "Ana Putri", "phone": "+60123456780", "company": "Acme Corp", "image": "https://…/me.jpg" }
 ```
 
 | Field | Type | Rules |
 |---|---|---|
 | `name` | string | 1–150, trimmed |
-| `phone` | string\|null | Max 30 |
+| `phone` | string\|null | Max 30. Validated with `libphonenumber-js`, region `MY` — must parse as a valid Malaysian number (`isValidPhoneNumber(value, 'MY')`); invalid formats are rejected before persisting |
 | `company` | string\|null | Max 150 |
-| `image` | string\|null | Valid URL |
+| `image` | string\|null | Valid URL. **URL-only** — this endpoint does not accept file uploads; see the note under `GET /me` for the planned upload endpoint |
 
 All optional. Returns the object from endpoint 1.
 
@@ -99,7 +101,7 @@ All optional. Returns the object from endpoint 1.
 {
   "data": [
     { "id": "usr_1", "email": "ana@example.com", "name": "Ana Putri",
-      "phone": "+628110000000", "company": "Acme", "role": "customer",
+      "phone": "+60123456789", "company": "Acme", "role": "customer",
       "emailVerified": true, "banned": false, "image": null,
       "totalBookings": 12, "totalSpent": "1840000.00", "lastBookingDate": "2026-09-15",
       "createdAt": "2026-08-31T14:00:00.000Z" }
@@ -147,7 +149,7 @@ Create a user from the console. **Access:** Admin.
   "email": "staff@terraspace.com",
   "password": "temporary-password",
   "name": "Budi Santoso",
-  "phone": "+628110000002",
+  "phone": "+60123456781",
   "company": null,
   "role": "staff",
   "sendWelcomeEmail": true
@@ -159,7 +161,7 @@ Create a user from the console. **Access:** Admin.
 | `email` | string | ✔ | — | Valid, lowercased, unique |
 | `password` | string | ✔ | — | Min 8 |
 | `name` | string | ✔ | — | 1–150 |
-| `phone` | string\|null | ✖ | `null` | |
+| `phone` | string\|null | ✖ | `null` | Validated with `libphonenumber-js`, region `MY` (same rule as `PATCH /me`) |
 | `company` | string\|null | ✖ | `null` | |
 | `role` | enum | ✖ | `customer` | |
 | `sendWelcomeEmail` | boolean | ✖ | `true` | |
@@ -188,13 +190,13 @@ Endpoint 4's object.
 ### Request
 
 ```json
-{ "name": "Budi Santoso", "phone": "+628110000002", "company": "Acme", "role": "admin", "email": "new@example.com" }
+{ "name": "Budi Santoso", "phone": "+60123456782", "company": "Acme", "role": "admin", "email": "new@example.com" }
 ```
 
 | Field | Type | Notes |
 |---|---|---|
 | `name` | string | |
-| `phone` | string\|null | |
+| `phone` | string\|null | Validated with `libphonenumber-js`, region `MY` (same rule as `PATCH /me`) |
 | `company` | string\|null | |
 | `role` | enum | **Privilege change — audit-logged with the actor** |
 | `email` | string | Unique; sets `emailVerified = false` and triggers re-verification |

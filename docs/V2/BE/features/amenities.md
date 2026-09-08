@@ -31,13 +31,11 @@ Not paginated — the catalog is small and bounded. Only `status = 'active'` is 
 ```json
 {
   "data": [
-    { "id": "a1…", "name": "Wi-Fi", "nameId": "Wi-Fi", "category": "Connectivity", "icon": "wifi" },
-    { "id": "a3…", "name": "Projector", "nameId": "Proyektor", "category": "Equipment", "icon": "projector" }
+    { "id": "a1…", "name": "Wi-Fi", "category": "Connectivity", "icon": "wifi" },
+    { "id": "a3…", "name": "Projector", "category": "Equipment", "icon": "projector" }
   ]
 }
 ```
-
-`nameId` is the Indonesian label. The client picks `name` or `nameId` from the active locale (`src/lib/i18n.tsx`) — the API does not resolve it, so one cached response serves both languages.
 
 ---
 
@@ -51,14 +49,14 @@ Not paginated — the catalog is small and bounded. Only `status = 'active'` is 
 |---|---|---|
 | `status` | enum | `active` · `inactive` |
 | `category` | string | |
-| `q` | string | Search `name` / `nameId` |
+| `q` | string | Search `name` |
 
 ### Response `200`
 
 ```json
 {
   "data": [
-    { "id": "a1…", "name": "Wi-Fi", "nameId": "Wi-Fi", "category": "Connectivity",
+    { "id": "a1…", "name": "Wi-Fi", "category": "Connectivity",
       "icon": "wifi", "status": "active",
       "usage": { "locations": 3, "workspaces": 28 },
       "createdAt": "2026-08-31T14:00:00.000Z", "updatedAt": "2026-09-01T09:00:00.000Z" }
@@ -77,13 +75,12 @@ Not paginated — the catalog is small and bounded. Only `status = 'active'` is 
 ### Request
 
 ```json
-{ "name": "Standing Desk", "nameId": "Meja Berdiri", "category": "Furniture", "icon": "desk", "status": "active" }
+{ "name": "Standing Desk", "category": "Furniture", "icon": "desk", "status": "active" }
 ```
 
 | Field | Type | Required | Default | Rules |
 |---|---|:---:|---|---|
 | `name` | string | ✔ | — | 1–100, trimmed, **unique** |
-| `nameId` | string | ✖ | falls back to `name` | 1–100 |
 | `category` | string | ✖ | `"General"` | Max 50 |
 | `icon` | string | ✖ | `"tag"` | Max 50; must be a known icon key |
 | `status` | enum | ✖ | `active` | |

@@ -66,6 +66,8 @@ Bookable workspaces. **Access:** Public.
 
 `currency` comes from `adminSettings.currency` — the display currency for the catalog. The booking snapshots it at creation.
 
+> **`imageUrl` is URL-only**, same as `image` on the user profile (see `users.md`). It links to an already-hosted image; there is no multipart/file upload for workspace photos in this spec yet. If the console needs to upload an image file directly (rather than paste a URL), that needs a separate endpoint (e.g. `POST /admin/workspaces/:id/image` accepting `multipart/form-data`, storing the file, and writing the resulting URL back into `imageUrl`). Not yet defined here — scope as a follow-up.
+
 ---
 
 ## 2. `GET /workspaces/:id`
@@ -204,7 +206,7 @@ Same query parameters as endpoint 1, plus `status`-agnostic behaviour and `q` (s
 | `pricePerHour` | decimal string | ✖ | `"0.00"` | `>= 0`, 2 dp |
 | `availability` | enum | ✖ | `available` | |
 | `simpleBooking` | boolean | ✖ | `false` | |
-| `imageUrl` | string\|null | ✖ | `null` | Valid URL |
+| `imageUrl` | string\|null | ✖ | `null` | Valid URL. **URL-only** — this endpoint does not accept file uploads; see the note under `GET /workspaces` for the planned upload endpoint |
 | `description` | string | ✖ | `""` | |
 | `cancellationPolicy` | string | ✖ | `""` | |
 | `calendarSyncProvider` | string\|null | ✖ | `null` | Max 50 |
