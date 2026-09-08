@@ -11,21 +11,14 @@ Implementation plan derived from the V2/BE specification.
 | # | Decision | Blocks | Status |
 |---|---|---|---|
 | 1 | Currency | Phase 1 | ✅ **IDR** — minor-unit exponent `0`. Conversion to PayBridge is **×1, not ×100** |
-| 2 | Guests in scope | Phase 5 | ⏳ **Open** — see below |
+| 2 | Guests in scope | Phase 5 | ⏳ **Not in scope** — see below |
 | 3 | `locations.timezone` | Phase 1 | ✅ **Added** — `VARCHAR(64)`, IANA, default `Asia/Jakarta` |
 | 4 | PayBridge onboarding | Phase 6 | ✅ Env keys are placeholders in `.env.example`; real values before Phase 6 |
 | 5 | Staff vs admin split | Phase 2 | ✅ **Confirmed** — staff run operations; admin owns catalog, settings, users, money |
 
-### Still open — #2, guests
+### Decided — #2, guests
 
-**The booker is always a `users` row.** `booking_guests` is a separate concept: additional people the booker invites onto *their* booking, who are not registered users but need door access for a time window. The current implementation models exactly that — `guest_name`, `guest_email`, `access_from`, `access_until`.
-
-| If invitee access is… | Then |
-|---|---|
-| **In scope** | Add `features/guests/` during Phase 5, using the corrected schema in [`erd-spec.md`](./erd-spec.md) §16.1. Note `access_from`/`access_until` must become **timestamps** — they are strings today and cannot be range-compared for door access |
-| **Not in scope** | Delete `src/backend/api/guest-crud.ts`, the admin guests page, and the guest input on booking review. Phase 5 shrinks slightly |
-
-Either path is ready; this only needs settling before Phase 5 starts.
+**Not in scope.** `booking_guests` (additional people a booker invites onto *their* booking, not registered users, needing door access for a time window) is dropped entirely. `src/backend/api/guest-crud.ts`, the admin guests page, and the guest input on booking review are **deleted**. Phase 5 shrinks accordingly — no `features/guests/` slice is built.
 
 ### What decisions 1 and 3 changed
 
