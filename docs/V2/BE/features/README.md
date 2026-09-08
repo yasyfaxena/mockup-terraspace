@@ -30,8 +30,21 @@ One document per feature. Each lists every endpoint with its full request and re
 | Dates | `YYYY-MM-DD` |
 | Times | `HH:mm` (24h) |
 | Timestamps | ISO 8601 UTC — `2026-09-07T04:12:00.000Z` |
-| Money | **String decimal** — `"150.00"` |
+| Money | **String decimal** — `"150000.00"` |
 | IDs | `users` → Better Auth string · everything else → UUID |
+
+### Currency — IDR
+
+The platform currency is **`IDR`**, and its **minor-unit exponent is `0`** — the rupiah *is* the smallest unit.
+
+| | |
+|---|---|
+| Storage | `NUMERIC(14,2)` — two decimal places kept for arithmetic safety, always `.00` in practice |
+| On the wire | Decimal string — `"166500.00"` |
+| To PayBridge | Integer minor units — `166500` (**×1**, not ×100) |
+| Display | `Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" })` |
+
+> **The ×100 reflex is wrong here.** Most currencies have two decimal places, so "convert to minor units" usually means multiplying by 100. For IDR that overcharges by a factor of 100. The conversion is driven by a per-currency exponent table, which **throws** on an unknown currency rather than guessing ([`payments.md`](./payments.md) §3).
 
 ### Why money is a string
 

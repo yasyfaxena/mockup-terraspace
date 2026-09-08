@@ -44,8 +44,8 @@ Bookable workspaces. **Access:** Public.
       "name": "Meeting Room A",
       "type": "meeting_room",
       "floor": "3",
-      "pricePerHour": "50.00",
-      "currency": "USD",
+      "pricePerHour": "50000.00",
+      "currency": "IDR",
       "availability": "available",
       "simpleBooking": false,
       "imageUrl": "https://…/room-a.jpg",
@@ -79,8 +79,8 @@ The object above, plus a live quote:
 ```json
 {
   "pricing": {
-    "pricePerHour": "50.00",
-    "currency": "USD",
+    "pricePerHour": "50000.00",
+    "currency": "IDR",
     "taxPercent": "11.00",
     "minimumDurationMinutes": 30,
     "advanceBookingDays": 30
@@ -154,7 +154,7 @@ Same query parameters as endpoint 1, plus `status`-agnostic behaviour and `q` (s
 {
   "data": [
     { "id": "8f14e45f-…", "locationId": "b1e2…", "name": "Meeting Room A",
-      "type": "meeting_room", "floor": "3", "pricePerHour": "50.00",
+      "type": "meeting_room", "floor": "3", "pricePerHour": "50000.00",
       "availability": "available", "simpleBooking": false,
       "imageUrl": "https://…", "description": "…", "cancellationPolicy": "…",
       "calendarSyncProvider": null, "qrProvider": "internal",
@@ -183,7 +183,7 @@ Same query parameters as endpoint 1, plus `status`-agnostic behaviour and `q` (s
   "name": "Meeting Room B",
   "type": "meeting_room",
   "floor": "3",
-  "pricePerHour": "45.00",
+  "pricePerHour": "45000.00",
   "availability": "available",
   "simpleBooking": false,
   "imageUrl": "https://…/room-b.jpg",

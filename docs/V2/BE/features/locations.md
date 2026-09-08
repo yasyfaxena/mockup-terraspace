@@ -44,6 +44,7 @@ Not paginated — the venue count is small and bounded. Only `status = 'active'`
       "description": "Central Jakarta coworking …",
       "latitude": "-6.208800",
       "longitude": "106.845600",
+      "timezone": "Asia/Jakarta",
       "amenities": [
         { "id": "a1…", "name": "Wi-Fi", "nameId": "Wi-Fi", "category": "Connectivity", "icon": "wifi" },
         { "id": "a2…", "name": "Parking", "nameId": "Parkir", "category": "Facility", "icon": "car" }
@@ -52,7 +53,7 @@ Not paginated — the venue count is small and bounded. Only `status = 'active'`
         "desksTotal": 24, "desksAvailable": 18,
         "roomsTotal": 6,  "roomsAvailable": 4,
         "occupancy": 27,
-        "priceFrom": "12.00",
+        "priceFrom": "12000.00",
         "types": ["hot_desk", "meeting_room", "private_office"],
         "availability": "limited"
       }
@@ -93,7 +94,7 @@ Same object as above, plus:
   "accessRadiusMeters": 50,
   "workspaces": [
     { "id": "8f14…", "name": "Hot Desk 12", "type": "hot_desk", "floor": "2",
-      "pricePerHour": "12.00", "currency": "USD", "availability": "available",
+      "pricePerHour": "12000.00", "currency": "IDR", "availability": "available",
       "imageUrl": null, "simpleBooking": true,
       "amenities": [{ "id": "a1…", "name": "Wi-Fi", "icon": "wifi" }] }
   ]
@@ -132,7 +133,7 @@ Public fields plus `status`, `createdAt`, `updatedAt`, and `workspaceCount` — 
       "address": "Jl. Sudirman 52", "city": "Jakarta", "imageUrl": "https://…",
       "openingHours": "Mon–Sun 09:00–22:00", "access247": false, "description": "…",
       "latitude": "-6.208800", "longitude": "106.845600", "accessRadiusMeters": 50,
-      "status": "active", "workspaceCount": 30,
+      "timezone": "Asia/Jakarta", "status": "active", "workspaceCount": 30,
       "amenityIds": ["a1…", "a2…"],
       "createdAt": "2026-08-31T14:00:00.000Z", "updatedAt": "2026-09-01T09:00:00.000Z" }
   ]
@@ -162,6 +163,7 @@ Admin responses carry `amenityIds` rather than expanded objects — the form bin
   "latitude": -6.9175,
   "longitude": 107.6191,
   "accessRadiusMeters": 50,
+  "timezone": "Asia/Jakarta",
   "status": "active",
   "amenityIds": ["a1…", "a2…"]
 }
@@ -180,6 +182,7 @@ Admin responses carry `amenityIds` rather than expanded objects — the form bin
 | `latitude` | number\|null | ✖ | `null` | −90…90 |
 | `longitude` | number\|null | ✖ | `null` | −180…180 |
 | `accessRadiusMeters` | int | ✖ | `50` | `> 0` |
+| `timezone` | string | ✖ | `"Asia/Jakarta"` | **IANA zone.** Validate against `Intl.supportedValuesOf("timeZone")`; reject fixed offsets like `+07:00` |
 | `status` | enum | ✖ | `active` | |
 | `amenityIds` | UUID[] | ✖ | `[]` | Each must exist and be `active` |
 

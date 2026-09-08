@@ -169,7 +169,7 @@ PayBridge takes `amount` as a **positive integer in the smallest currency unit**
 | Currency | Exponent | `NUMERIC` | → PayBridge `amount` |
 |---|---:|---|---|
 | **IDR** | **0** | `100000.00` | `100000` |
-| USD | 2 | `166.50` | `16650` |
+| USD | 2 | `166.50` | `16650` — for contrast; not this platform |
 | SGD | 2 | `220.00` | `22000` |
 
 ```js
@@ -284,9 +284,9 @@ No amount — it is read from the booking. The client cannot influence what is c
   "paymentId": "9c1f…",
   "status": "pending",
   "provider": "xendit",
-  "amount": "166.50",
-  "amountMinor": 16650,
-  "currency": "USD",
+  "amount": "1665000.00",
+  "amountMinor": 166500,
+  "currency": "IDR",
   "checkoutUrl": "https://pay.example.com/checkout/session-id#token=…",
   "expiresAt": "2026-09-07T05:12:00.000Z",
   "booking": { "id": "3fa85f64-…", "reference": "TS-8F3K2A", "status": "pending" }
@@ -300,8 +300,8 @@ Redirect the customer to `checkoutUrl`.
 ```json
 {
   "provider": "xendit",
-  "amount": 16650,
-  "currency": "USD",
+  "amount": 166500,
+  "currency": "IDR",
   "customer": { "name": "Ana Putri", "email": "ana@example.com", "mobileNumber": "+628110000000" },
   "description": "TerraSpace booking TS-8F3K2A — Meeting Room A, 15 Sep 2026 09:00–12:00",
   "items": [
@@ -410,8 +410,8 @@ Payment status for the return-from-checkout page. **Access:** Customer (owner).
   "paymentId": "9c1f…",
   "status": "paid",
   "provider": "xendit",
-  "amount": "166.50",
-  "currency": "USD",
+  "amount": "1665000.00",
+  "currency": "IDR",
   "paymentMethod": { "code": "BCA_VIRTUAL_ACCOUNT", "name": "BCA Virtual Account", "category": "virtual_account" },
   "checkoutUrl": null,
   "paidAt": "2026-09-07T04:40:00.000Z",
@@ -439,7 +439,7 @@ Returns `404` for another user's booking, never `403`.
 {
   "data": [
     { "id": "9c1f…", "status": "paid", "provider": "xendit",
-      "amount": "166.50", "currency": "USD",
+      "amount": "1665000.00", "currency": "IDR",
       "paymentMethod": { "code": "BCA_VIRTUAL_ACCOUNT", "category": "virtual_account" },
       "paybridgeOrderId": "TSPC-1-3-18cf2a91b3c",
       "refundedAmount": "0.00",
@@ -462,14 +462,14 @@ Returns `404` for another user's booking, never `403`.
 ```json
 {
   "id": "9c1f…", "status": "paid", "provider": "xendit",
-  "amount": "166.50", "amountMinor": 16650, "currency": "USD",
+  "amount": "1665000.00", "amountMinor": 166500, "currency": "IDR",
   "paybridgeChargeId": "session-id", "paybridgeOrderId": "TSPC-1-3-18cf2a91b3c",
   "providerChargeId": "pr-90392f42-…",
   "paymentMethod": { "code": "BCA_VIRTUAL_ACCOUNT", "name": "BCA Virtual Account", "category": "virtual_account" },
   "booking": { "id": "3fa85f64-…", "reference": "TS-8F3K2A" },
   "customer": { "id": "usr_1", "name": "Ana Putri", "email": "ana@example.com" },
   "refunds": [
-    { "id": "r1…", "amount": "50.00", "status": "succeeded",
+    { "id": "r1…", "amount": "50000.00", "status": "succeeded",
       "reason": "Customer requested partial refund",
       "requestedBy": { "id": "usr_9", "name": "Admin" }, "createdAt": "…" }
   ],
@@ -492,7 +492,7 @@ Returns `404` for another user's booking, never `403`.
 ### Request
 
 ```json
-{ "amount": "50.00", "reason": "Customer requested partial refund" }
+{ "amount": "50000.00", "reason": "Customer requested partial refund" }
 ```
 
 | Field | Type | Required | Notes |
@@ -504,9 +504,9 @@ Returns `404` for another user's booking, never `403`.
 
 ```json
 {
-  "id": "r1…", "paymentId": "9c1f…", "amount": "50.00", "currency": "USD",
+  "id": "r1…", "paymentId": "9c1f…", "amount": "50000.00", "currency": "IDR",
   "status": "succeeded", "reason": "Customer requested partial refund",
-  "payment": { "status": "partially_refunded", "refundedAmount": "50.00", "remainingAmount": "116.50" },
+  "payment": { "status": "partially_refunded", "refundedAmount": "50000.00", "remainingAmount": "116500.00" },
   "createdAt": "2026-09-07T06:00:00.000Z"
 }
 ```

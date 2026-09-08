@@ -270,6 +270,7 @@ Email-verification and password-reset tokens. No FK — `identifier` may exist b
 | `latitude` | `NUMERIC(9,6)` | YES | `NULL` | |
 | `longitude` | `NUMERIC(9,6)` | YES | `NULL` | |
 | `access_radius_meters` | `INTEGER` | NO | `50` | |
+| `timezone` | `VARCHAR(64)` | NO | `'Asia/Jakarta'` | **IANA zone** — `Asia/Jakarta` · `Asia/Makassar` · `Asia/Jayapura` |
 | `status` | `location_status` | NO | `'active'` | |
 | `created_at` | `TIMESTAMPTZ` | NO | `now()` | |
 | `updated_at` | `TIMESTAMPTZ` | NO | `now()` | |
@@ -283,6 +284,10 @@ Email-verification and password-reset tokens. No FK — `identifier` may exist b
 | `(city, status)` | BTREE | Location listing & filtering |
 
 **Checks:** `latitude BETWEEN -90 AND 90` · `longitude BETWEEN -180 AND 180` · `access_radius_meters > 0`
+
+> **Why `timezone` is a column and not a constant.** `bookings` stores `booking_date` (`DATE`) and `start_time` (`TIME`) in **venue-local** terms — there is no zone in the values themselves. Converting one to an absolute instant needs the venue's zone, and Indonesia alone spans three (`Asia/Jakarta` WIB, `Asia/Makassar` WITA, `Asia/Jayapura` WIT). Without this column, "is this booking active right now", the cancellation-window check, and report day-bucketing are all silently wrong for any venue outside the server's zone.
+>
+> Store the **IANA identifier**, never a fixed offset — offsets change, zones do not. Validate against `Intl.supportedValuesOf("timeZone")` at write time.
 
 ---
 
@@ -396,7 +401,7 @@ Core transaction table.
 | `subtotal_amount` | `NUMERIC(14,2)` | NO | `0` | |
 | `tax_amount` | `NUMERIC(14,2)` | NO | `0` | |
 | `total_amount` | `NUMERIC(14,2)` | NO | `0` | |
-| `currency` | `CHAR(3)` | NO | `'USD'` | Currency snapshot |
+| `currency` | `CHAR(3)` | NO | `'IDR'` | Currency snapshot |
 | ~~`payment_method`~~ | — | — | — | **Removed** — the `card`/`ewallet`/`bank` enum cannot express PayBridge's method codes (`BCA_VIRTUAL_ACCOUNT`, `OVO`, …). The truth is `payments.payment_method_code` / `payment_method_category` |
 | `payment_status` | `payment_status` | NO | `'pending'` | **Derived.** Mirrors the active payment's state so booking lists need no join; written only by the payments service |
 | `status` | `booking_status` | NO | `'pending'` | |
@@ -456,7 +461,7 @@ Singleton configuration row.
 | `id` | `BOOLEAN` | NO | `true` | PK |
 | `company_name` | `VARCHAR(150)` | NO | `'TerraSpace'` | |
 | `support_email` | `VARCHAR(255)` | YES | `NULL` | |
-| `currency` | `CHAR(3)` | NO | `'USD'` | |
+| `currency` | `CHAR(3)` | NO | `'IDR'` | |
 | `tax_percent` | `NUMERIC(5,2)` | NO | `0` | |
 | `cancellation_window_hours` | `INTEGER` | NO | `24` | |
 | `advance_booking_days` | `INTEGER` | NO | `30` | |

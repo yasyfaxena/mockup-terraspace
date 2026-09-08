@@ -20,8 +20,8 @@ The subset of configuration the booking UI needs. **Access:** Public.
 {
   "companyName": "TerraSpace",
   "supportEmail": "support@terraspace.com",
-  "currency": "USD",
-  "currencyExponent": 2,
+  "currency": "IDR",
+  "currencyExponent": 0,
   "taxPercent": "11.00",
   "cancellationWindowHours": 24,
   "advanceBookingDays": 30,
@@ -54,7 +54,7 @@ Cache for 5 minutes. Values change rarely, and every booking page load reads the
 {
   "companyName": "TerraSpace",
   "supportEmail": "support@terraspace.com",
-  "currency": "USD",
+  "currency": "IDR",
   "taxPercent": "11.00",
   "cancellationWindowHours": 24,
   "advanceBookingDays": 30,

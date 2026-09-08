@@ -34,7 +34,7 @@ The authenticated user's own profile. **Access:** Customer.
   "emailVerified": true,
   "role": "customer",
   "createdAt": "2026-08-31T14:00:00.000Z",
-  "stats": { "totalBookings": 12, "upcomingBookings": 2, "totalSpent": "1840.00", "currency": "USD" },
+  "stats": { "totalBookings": 12, "upcomingBookings": 2, "totalSpent": "1840000.00", "currency": "IDR" },
   "authMethods": [
     { "providerId": "credential", "linkedAt": "2026-08-31T14:00:00.000Z" },
     { "providerId": "google", "linkedAt": "2026-09-02T08:10:00.000Z" }
@@ -101,7 +101,7 @@ All optional. Returns the object from endpoint 1.
     { "id": "usr_1", "email": "ana@example.com", "name": "Ana Putri",
       "phone": "+628110000000", "company": "Acme", "role": "customer",
       "emailVerified": true, "banned": false, "image": null,
-      "totalBookings": 12, "totalSpent": "1840.00", "lastBookingDate": "2026-09-15",
+      "totalBookings": 12, "totalSpent": "1840000.00", "lastBookingDate": "2026-09-15",
       "createdAt": "2026-08-31T14:00:00.000Z" }
   ],
   "meta": { "page": 1, "limit": 20, "total": 248, "totalPages": 13 }
@@ -127,7 +127,7 @@ Endpoint 3's object, plus:
   "activeSessions": 2,
   "recentBookings": [
     { "id": "3fa85f64-…", "reference": "TS-8F3K2A", "bookingDate": "2026-09-15",
-      "status": "confirmed", "totalAmount": "166.50", "workspaceName": "Meeting Room A" }
+      "status": "confirmed", "totalAmount": "166500.00", "workspaceName": "Meeting Room A" }
   ]
 }
 ```

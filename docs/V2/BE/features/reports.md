@@ -41,19 +41,19 @@ Dashboard tiles for a single day. **Access:** Staff.
 ```json
 {
   "date": "2026-09-07",
-  "currency": "USD",
+  "currency": "IDR",
   "summary": {
     "bookingsToday": 18,
     "confirmedToday": 15,
     "cancelledToday": 3,
-    "revenueToday": "1240.00",
+    "revenueToday": "1240000.00",
     "occupancyPercent": 62,
     "newCustomersToday": 4
   },
   "comparison": { "bookingsChangePercent": 12, "revenueChangePercent": -4 },
   "schedule": [
     { "id": "3fa85f64-…", "reference": "TS-8F3K2A", "startTime": "09:00", "endTime": "12:00",
-      "status": "confirmed", "paymentStatus": "paid", "totalAmount": "166.50",
+      "status": "confirmed", "paymentStatus": "paid", "totalAmount": "166500.00",
       "workspaceName": "Meeting Room A", "locationName": "TerraSpace Jakarta",
       "customerName": "Ana Putri" }
   ]
@@ -87,26 +87,26 @@ Dashboard tiles for a single day. **Access:** Staff.
 {
   "range": { "from": "2026-08-01", "to": "2026-08-31" },
   "groupBy": "day",
-  "currency": "USD",
+  "currency": "IDR",
   "totals": {
-    "grossRevenue": "24180.00",
-    "refundedAmount": "620.00",
-    "netRevenue": "23560.00",
-    "taxCollected": "2394.00",
+    "grossRevenue": "24180000.00",
+    "refundedAmount": "620000.00",
+    "netRevenue": "23560000.00",
+    "taxCollected": "2394000.00",
     "bookingCount": 312,
-    "averageBookingValue": "77.50",
+    "averageBookingValue": "77500.00",
     "cancellationRate": 8
   },
   "series": [
-    { "period": "2026-08-01", "grossRevenue": "820.00", "refundedAmount": "0.00",
-      "netRevenue": "820.00", "bookingCount": 11 }
+    { "period": "2026-08-01", "grossRevenue": "820000.00", "refundedAmount": "0.00",
+      "netRevenue": "820000.00", "bookingCount": 11 }
   ],
   "byLocation": [
     { "locationId": "b1e2…", "locationName": "TerraSpace Jakarta",
-      "netRevenue": "15200.00", "bookingCount": 198, "sharePercent": 64 }
+      "netRevenue": "15200000.00", "bookingCount": 198, "sharePercent": 64 }
   ],
   "byWorkspaceType": [
-    { "type": "meeting_room", "netRevenue": "12400.00", "bookingCount": 96, "sharePercent": 53 }
+    { "type": "meeting_room", "netRevenue": "12400000.00", "bookingCount": 96, "sharePercent": 53 }
   ]
 }
 ```
@@ -144,10 +144,10 @@ Utilization — the number that decides whether to add capacity. **Access:** Adm
   "byWorkspace": [
     { "workspaceId": "8f14…", "workspaceName": "Meeting Room A", "type": "meeting_room",
       "locationName": "TerraSpace Jakarta",
-      "bookedHours": "148.00", "occupancyPercent": 71, "revenue": "7400.00" }
+      "bookedHours": "148.00", "occupancyPercent": 71, "revenue": "7400000.00" }
   ],
   "leastUtilized": [
-    { "workspaceId": "c9d3…", "workspaceName": "Event Space", "occupancyPercent": 6, "revenue": "480.00" }
+    { "workspaceId": "c9d3…", "workspaceName": "Event Space", "occupancyPercent": 6, "revenue": "480000.00" }
   ]
 }
 ```
@@ -174,13 +174,13 @@ Financial ledger. **Access:** Admin. Replaces `adminGetPayments` and `adminGetPa
     { "paymentId": "9c1f…", "bookingReference": "TS-8F3K2A",
       "status": "paid", "provider": "xendit",
       "paymentMethod": { "code": "BCA_VIRTUAL_ACCOUNT", "category": "virtual_account" },
-      "amount": "166.50", "refundedAmount": "0.00", "netAmount": "166.50", "currency": "USD",
+      "amount": "166500.00", "refundedAmount": "0.00", "netAmount": "166500.00", "currency": "IDR",
       "customerName": "Ana Putri", "customerEmail": "ana@example.com",
       "bookingDate": "2026-09-15",
       "paidAt": "2026-09-07T04:40:00.000Z", "createdAt": "2026-09-07T04:12:00.000Z" }
   ],
   "meta": { "page": 1, "limit": 20, "total": 412, "totalPages": 21 },
-  "totals": { "paid": "23560.00", "refunded": "620.00", "pending": "1180.00", "failed": "340.00" }
+  "totals": { "paid": "23560000.00", "refunded": "620000.00", "pending": "1180000.00", "failed": "340000.00" }
 }
 ```
 
