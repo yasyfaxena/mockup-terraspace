@@ -14,4 +14,15 @@ export class SettingsRepository {
   findSingleton() {
     return this.db.adminSettings.findUniqueOrThrow({ where: { id: true } });
   }
+
+  /**
+   * `PUT`, not `PATCH` — but Prisma's `update` still only touches the
+   * fields present in `data`, which is exactly "omitted fields keep their
+   * current value" (settings.md §3) without reading-then-merging first.
+   * @param {Record<string, unknown>} data
+   * @returns {Promise<import("@prisma/client").AdminSettings>}
+   */
+  update(data) {
+    return this.db.adminSettings.update({ where: { id: true }, data: /** @type {any} */ (data) });
+  }
 }

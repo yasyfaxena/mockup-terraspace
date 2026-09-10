@@ -66,6 +66,8 @@ Dashboard tiles for a single day. **Access:** Staff.
 
 **`revenueToday` counts only `paymentStatus = 'paid'`.** Pending checkouts are not revenue.
 
+> **Implementation note.** Unlike `/reports/revenue` (§2 rule 4), `overview` and `occupancy`'s `revenue` figures do not split by currency — they assume a single operating currency (this platform's actual deployment) and report one flat number even if bookings exist in more than one. A genuinely multi-currency dashboard should read `/reports/revenue` instead, which does the currency split correctly.
+
 ---
 
 ## 2. `GET /admin/reports/revenue`

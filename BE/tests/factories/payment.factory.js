@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "../../src/shared/database/client.js";
 import { seedBooking } from "./booking.factory.js";
+import { seedUser } from "./user.factory.js";
 
 let counter = 0;
 
@@ -26,5 +27,26 @@ export async function seedPayment(overrides = {}) {
   const resolvedBookingId = bookingId ?? (await seedBooking()).id;
   return prisma.payment.create({
     data: { ...buildPayment(rest), bookingId: resolvedBookingId },
+  });
+}
+
+/**
+ * Persists a `succeeded` refund, creating a `paid` payment (and its
+ * booking) when `paymentId` is not supplied.
+ * @param {Partial<import("@prisma/client").Refund> & { paymentId?: string }} [overrides]
+ */
+export async function seedRefund(overrides = {}) {
+  const { paymentId, requestedBy, ...rest } = overrides;
+  const resolvedPaymentId = paymentId ?? (await seedPayment({ status: "paid" })).id;
+  const resolvedRequestedBy = requestedBy ?? (await seedUser()).id;
+  return prisma.refund.create({
+    data: {
+      paybridgeRefundId: `refund_${randomUUID()}`,
+      amountMinor: 10000n,
+      status: "succeeded",
+      ...rest,
+      paymentId: resolvedPaymentId,
+      requestedBy: resolvedRequestedBy,
+    },
   });
 }

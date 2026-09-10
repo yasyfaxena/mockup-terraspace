@@ -9,6 +9,8 @@ import {
   bookingPaymentsRouter,
   adminPaymentsRouter,
 } from "../features/payments/index.js";
+import { publicSettingsRouter, adminSettingsRouter } from "../features/settings/index.js";
+import { reportsRouter } from "../features/reports/index.js";
 
 export const apiRouter = Router();
 
@@ -25,3 +27,6 @@ apiRouter.use("/admin/workspaces", adminWorkspacesRouter);
 apiRouter.use("/admin/amenities", adminAmenitiesRouter);
 apiRouter.use("/admin/bookings", adminBookingsRouter);
 apiRouter.use("/admin/payments", adminPaymentsRouter);
+apiRouter.use("/settings/public", publicSettingsRouter);
+apiRouter.use("/admin/settings", adminSettingsRouter);
+apiRouter.use("/admin", reportsRouter); // owns /reports/* and /activity

@@ -111,7 +111,7 @@ The object from endpoint 2.
 
 1. **Existing bookings are unaffected.** Each snapshots `unitPrice` and `currency` at creation (ERD §13). Changing the tax rate or currency here changes only future bookings — never historical revenue.
 2. **`currency` must be a code the payment layer understands.** PayBridge takes amounts in minor units, and the conversion needs the currency's exponent. Accepting a currency not in that table would make every checkout fail at charge creation, so it is rejected here instead ([payments](./payments.md) §3).
-3. Changing `currency` while unpaid bookings exist is allowed but logged as a warning — those bookings keep the old snapshot and will be charged in it.
+3. Changing `currency` is always logged as a warning — those bookings keep the old snapshot and will be charged in it. **Implementation note:** the warning does not actually count unpaid bookings first. `bookings.service.js` already depends on `settings` for tax/cancellation-window lookups; querying `bookings` back from `settings` to check for unpaid rows would make the two features import each other, a genuine ESM circular-import hazard (`import/no-cycle`), not just a lint nitpick. Every currency change is warned on unconditionally instead — a currency change with zero unpaid bookings logs one extra (harmless) warning line, which is a smaller cost than a circular dependency between two core features.
 4. Every change is audit-logged with the acting admin. These values move money.
 
 > **Field naming.** The current implementation accepts and returns `snake_case` here (`company_name`, `tax_percent`) while other endpoints use `camelCase`. V2 is `camelCase` throughout.
