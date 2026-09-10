@@ -1,5 +1,7 @@
 import { prisma } from "../../shared/database/client.js";
 
+const ISO_DATE_LENGTH = 10;
+
 /** @type {Record<string, string>} */
 const SORT_FIELD = Object.freeze({
   bookingDate: "bookingDate",
@@ -31,13 +33,18 @@ const WORKSPACE_SUMMARY_SELECT = {
 
 const CUSTOMER_SELECT = { id: true, name: true, email: true, phone: true, company: true };
 
+/** Prisma access for the `bookings` table. */
 export class BookingsRepository {
   /** @param {{ db?: import("@prisma/client").PrismaClient }} [deps] */
   constructor(deps = {}) {
     this.db = deps.db ?? prisma;
   }
 
-  /** Raw fields the pricing/availability checks need — not a mapped DTO. @param {string} workspaceId */
+  /**
+   * Raw fields the pricing/availability checks need — not a mapped DTO.
+   * @param {string} workspaceId
+   * @returns {Promise<{ id: string, name: string, type: string, floor: string, pricePerHour: unknown, availability: string, location: { id: string, slug: string, name: string, address: string, city: string, status: string, timezone: string } } | null>}
+   */
   findWorkspaceForBooking(workspaceId) {
     return this.db.workspace.findUnique({
       where: { id: workspaceId },
@@ -66,6 +73,7 @@ export class BookingsRepository {
   /**
    * @param {Record<string, unknown>} data
    * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   * @returns {Promise<import("@prisma/client").Booking & { workspace: any }>}
    */
   create(data, client = this.db) {
     return client.booking.create({
@@ -74,7 +82,10 @@ export class BookingsRepository {
     });
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<(import("@prisma/client").Booking & { workspace: any }) | null>}
+   */
   findById(id) {
     return this.db.booking.findUnique({
       where: { id },
@@ -82,7 +93,10 @@ export class BookingsRepository {
     });
   }
 
-  /** @param {string} reference */
+  /**
+   * @param {string} reference
+   * @returns {Promise<(import("@prisma/client").Booking & { workspace: any }) | null>}
+   */
   findByReference(reference) {
     return this.db.booking.findUnique({
       where: { reference },
@@ -93,9 +107,10 @@ export class BookingsRepository {
   /**
    * @param {string} userId
    * @param {{ status?: string, scope: string, page: number, limit: number }} params
+   * @returns {Promise<{ rows: Array<import("@prisma/client").Booking & { workspace: any }>, total: number }>}
    */
   async findManyForUser(userId, params) {
-    const today = new Date(new Date().toISOString().slice(0, 10));
+    const today = new Date(new Date().toISOString().slice(0, ISO_DATE_LENGTH));
     const where = /** @type {import("@prisma/client").Prisma.BookingWhereInput} */ ({
       userId,
       ...(params.status ? { status: params.status } : {}),
@@ -122,19 +137,21 @@ export class BookingsRepository {
   }
 
   /**
+   * The `findAllAdmin` `where` clause — split out so each method's
+   * cyclomatic complexity stays under the linter.md §3 limit.
    * @param {{
    *   status?: string, paymentStatus?: string, locationId?: string, workspaceId?: string,
    *   userId?: string, from?: string, to?: string, q?: string,
-   *   sort: string, order: string, page: number, limit: number,
    * }} params
+   * @returns {import("@prisma/client").Prisma.BookingWhereInput}
    */
-  async findAllAdmin(params) {
+  #adminWhere(params) {
     const bookingDateRange = {
       ...(params.from ? { gte: new Date(`${params.from}T00:00:00.000Z`) } : {}),
       ...(params.to ? { lte: new Date(`${params.to}T00:00:00.000Z`) } : {}),
     };
 
-    const where = /** @type {import("@prisma/client").Prisma.BookingWhereInput} */ ({
+    return /** @type {import("@prisma/client").Prisma.BookingWhereInput} */ ({
       ...(params.status ? { status: params.status } : {}),
       ...(params.paymentStatus ? { paymentStatus: params.paymentStatus } : {}),
       ...(params.workspaceId ? { workspaceId: params.workspaceId } : {}),
@@ -151,6 +168,18 @@ export class BookingsRepository {
           }
         : {}),
     });
+  }
+
+  /**
+   * @param {{
+   *   status?: string, paymentStatus?: string, locationId?: string, workspaceId?: string,
+   *   userId?: string, from?: string, to?: string, q?: string,
+   *   sort: string, order: string, page: number, limit: number,
+   * }} params
+   * @returns {Promise<{ rows: Array<import("@prisma/client").Booking & { user: any, workspace: any }>, total: number }>}
+   */
+  async findAllAdmin(params) {
+    const where = this.#adminWhere(params);
 
     const [rows, total] = await Promise.all([
       this.db.booking.findMany({
@@ -175,7 +204,10 @@ export class BookingsRepository {
     return { rows, total };
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<(import("@prisma/client").Booking & { user: any, workspace: any }) | null>}
+   */
   findByIdAdmin(id) {
     return this.db.booking.findUnique({
       where: { id },
@@ -198,6 +230,7 @@ export class BookingsRepository {
    * @param {string} id
    * @param {Record<string, unknown>} data
    * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   * @returns {Promise<import("@prisma/client").Booking & { workspace: any }>}
    */
   update(id, data, client = this.db) {
     return client.booking.update({
@@ -207,7 +240,11 @@ export class BookingsRepository {
     });
   }
 
-  /** Hard delete — admin only (bookings.md §9). @param {string} id */
+  /**
+   * Hard delete — admin only (bookings.md §9).
+   * @param {string} id
+   * @returns {Promise<import("@prisma/client").Booking>}
+   */
   delete(id) {
     return this.db.booking.delete({ where: { id } });
   }
@@ -215,6 +252,7 @@ export class BookingsRepository {
   /**
    * Bounded by the mandatory `from`/`to` range — no pagination needed (bookings.md §10).
    * @param {{ from: string, to: string, locationId?: string, workspaceId?: string }} params
+   * @returns {Promise<Array<{ id: string, reference: string, status: string, bookingDate: Date, startTime: Date, endTime: Date, workspaceId: string, workspace: { name: string }, user: { name: string } }>>}
    */
   findCalendar(params) {
     return this.db.booking.findMany({
@@ -241,8 +279,11 @@ export class BookingsRepository {
     });
   }
 
-  /** @param {(tx: import("@prisma/client").Prisma.TransactionClient) => Promise<any>} callback */
-  transaction(callback) {
-    return this.db.$transaction(callback);
+  /**
+   * @param {(tx: import("@prisma/client").Prisma.TransactionClient) => Promise<any>} run
+   * @returns {Promise<any>}
+   */
+  transaction(run) {
+    return this.db.$transaction(run);
   }
 }

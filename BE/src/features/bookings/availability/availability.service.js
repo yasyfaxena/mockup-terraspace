@@ -1,8 +1,14 @@
 import { AvailabilityRepository } from "./availability.repository.js";
 
-/** @param {Date} date a `@db.Time` column value — a fixed epoch date carrying only the time */
+const ISO_TIME_START = 11;
+const ISO_TIME_END = 16;
+
+/**
+ * @param {Date} date a `@db.Time` column value — a fixed epoch date carrying only the time
+ * @returns {string} `HH:mm`
+ */
 function toHHMM(date) {
-  return date.toISOString().slice(11, 16);
+  return date.toISOString().slice(ISO_TIME_START, ISO_TIME_END);
 }
 
 /**
@@ -34,6 +40,7 @@ export function computeFreeIntervals(openingHours, busyIntervals) {
   return free;
 }
 
+/** Computes free/busy intervals for a workspace on one day — shared by Phase 3's read endpoint and Phase 5's booking create. */
 export class AvailabilityService {
   /** @param {{ availabilityRepository?: AvailabilityRepository }} [deps] */
   constructor(deps = {}) {
@@ -44,6 +51,7 @@ export class AvailabilityService {
    * @param {string} workspaceId
    * @param {Date} bookingDate
    * @param {import("./availability.types.js").TimeInterval} openingHours
+   * @returns {Promise<{ busy: import("./availability.types.js").TimeInterval[], available: import("./availability.types.js").TimeInterval[] }>}
    */
   async getFreeBusy(workspaceId, bookingDate, openingHours) {
     const bookings = await this.repo.findBlockingBookings(workspaceId, bookingDate);

@@ -114,7 +114,7 @@ const VALID_CREATE = {
 
 describe("BookingsService.create", () => {
   it("throws NotFoundError when the workspace does not exist", async () => {
-    const { service, repo } = makeService({
+    const { service } = makeService({
       repo: { findWorkspaceForBooking: vi.fn().mockResolvedValue(null) },
     });
     await expect(service.create("u1", VALID_CREATE)).rejects.toBeInstanceOf(NotFoundError);

@@ -11,7 +11,10 @@ import { EmailAlreadyExistsError, LastAdminError, UserHasBookingsError } from ".
 import { WelcomeEmail } from "./welcome-email.js";
 
 const RECENT_BOOKINGS_LIMIT = 10;
+const USER_NOT_FOUND_MESSAGE = "User not found.";
+const MS_PER_SECOND = 1000;
 
+/** Business rules for the authenticated user's own profile and admin user management. */
 export class UsersService {
   /**
    * @param {{
@@ -29,6 +32,7 @@ export class UsersService {
   /**
    * @param {string} userId
    * @throws {NotFoundError}
+   * @returns {Promise<import("./users.types.js").MeDto>}
    */
   async getMe(userId) {
     const [user, stats, authMethods, settings] = await Promise.all([
@@ -37,7 +41,7 @@ export class UsersService {
       this.repo.findAuthMethods(userId),
       this.settings.getSettings(),
     ]);
-    if (!user) throw new NotFoundError("User not found.");
+    if (!user) throw new NotFoundError(USER_NOT_FOUND_MESSAGE);
     return toMeDto(user, { stats, authMethods, currency: settings.currency });
   }
 
@@ -46,6 +50,7 @@ export class UsersService {
    * body would let a customer send `{"role":"admin"}` (users.md §2).
    * @param {string} userId
    * @param {{ name?: string, phone?: string|null, company?: string|null, image?: string|null }} data
+   * @returns {Promise<import("./users.types.js").MeDto>}
    */
   async updateMe(userId, data) {
     const updateData = {};
@@ -60,6 +65,7 @@ export class UsersService {
 
   /**
    * @param {{ q?: string, role?: string, banned?: boolean, sort: string, order: string, page: number, limit: number }} query
+   * @returns {Promise<{ data: import("./users.types.js").AdminUserListItemDto[], meta: import("../../shared/types/pagination.js").PaginationMeta }>}
    */
   async listAdmin(query) {
     const { rows, total } = await this.repo.listAdmin(query);
@@ -72,10 +78,11 @@ export class UsersService {
   /**
    * @param {string} id
    * @throws {NotFoundError}
+   * @returns {Promise<import("./users.types.js").AdminUserDetailDto>}
    */
   async getAdminDetail(id) {
     const user = await this.repo.findById(id);
-    if (!user) throw new NotFoundError("User not found.");
+    if (!user) throw new NotFoundError(USER_NOT_FOUND_MESSAGE);
 
     const [authMethods, activeSessions, recentBookings, stats] = await Promise.all([
       this.repo.findAuthMethods(id),
@@ -92,6 +99,7 @@ export class UsersService {
    * @param {{ email: string, password: string, name: string, phone?: string|null, company?: string|null, role: string, sendWelcomeEmail: boolean }} data
    * @param {{ headers: Headers }} context
    * @throws {EmailAlreadyExistsError}
+   * @returns {Promise<import("./users.types.js").AdminUserDetailDto>}
    */
   async createUser(data, { headers }) {
     const existing = await this.repo.findByEmail(data.email);
@@ -129,10 +137,11 @@ export class UsersService {
    * @throws {NotFoundError}
    * @throws {EmailAlreadyExistsError}
    * @throws {LastAdminError} demoting the last remaining admin
+   * @returns {Promise<import("./users.types.js").AdminUserDetailDto>}
    */
   async updateAdminUser(id, data, { headers }) {
     const user = await this.repo.findById(id);
-    if (!user) throw new NotFoundError("User not found.");
+    if (!user) throw new NotFoundError(USER_NOT_FOUND_MESSAGE);
 
     if (data.email && data.email !== user.email) {
       const existing = await this.repo.findByEmail(data.email);
@@ -157,6 +166,7 @@ export class UsersService {
    * @param {string} nextRole
    * @param {Headers} headers
    * @throws {LastAdminError} demoting the last remaining admin
+   * @returns {Promise<void>}
    */
   async #changeRole(id, currentRole, nextRole, headers) {
     if (currentRole === "admin") {
@@ -174,6 +184,7 @@ export class UsersService {
   /**
    * @param {{ name?: string, phone?: string|null, company?: string|null, email?: string }} data
    * @param {string} currentEmail
+   * @returns {{ name?: string, phone?: string|null, company?: string|null, email?: string, emailVerified?: boolean }}
    */
   #buildProfileFields(data, currentEmail) {
     const fields = {};
@@ -196,10 +207,11 @@ export class UsersService {
    * @throws {NotFoundError}
    * @throws {LastAdminError} deleting yourself, or the last remaining admin
    * @throws {UserHasBookingsError}
+   * @returns {Promise<{ success: true }>}
    */
   async deleteUser(id, { actorId, headers }) {
     const user = await this.repo.findById(id);
-    if (!user) throw new NotFoundError("User not found.");
+    if (!user) throw new NotFoundError(USER_NOT_FOUND_MESSAGE);
 
     if (id === actorId) {
       throw new LastAdminError("You cannot delete your own account.");
@@ -226,10 +238,11 @@ export class UsersService {
    * @param {{ actorId: string, headers: Headers }} context
    * @throws {NotFoundError}
    * @throws {LastAdminError} banning yourself, or the last remaining admin
+   * @returns {Promise<import("./users.types.js").BanResultDto>}
    */
   async banUser(id, data, { actorId, headers }) {
     const user = await this.repo.findById(id);
-    if (!user) throw new NotFoundError("User not found.");
+    if (!user) throw new NotFoundError(USER_NOT_FOUND_MESSAGE);
 
     if (id === actorId) {
       throw new LastAdminError("You cannot ban your own account.");
@@ -242,7 +255,7 @@ export class UsersService {
     }
 
     const banExpiresIn = data.expiresAt
-      ? Math.max(0, Math.floor((new Date(data.expiresAt).getTime() - Date.now()) / 1000))
+      ? Math.max(0, Math.floor((new Date(data.expiresAt).getTime() - Date.now()) / MS_PER_SECOND))
       : undefined;
 
     await this.auth.api.banUser({
@@ -251,7 +264,7 @@ export class UsersService {
     });
 
     const banned = await this.repo.findById(id);
-    if (!banned) throw new NotFoundError("User not found.");
+    if (!banned) throw new NotFoundError(USER_NOT_FOUND_MESSAGE);
     return toBanDto(banned);
   }
 
@@ -259,14 +272,15 @@ export class UsersService {
    * @param {string} id
    * @param {{ headers: Headers }} context
    * @throws {NotFoundError}
+   * @returns {Promise<import("./users.types.js").BanResultDto>}
    */
   async unbanUser(id, { headers }) {
     const user = await this.repo.findById(id);
-    if (!user) throw new NotFoundError("User not found.");
+    if (!user) throw new NotFoundError(USER_NOT_FOUND_MESSAGE);
 
     await this.auth.api.unbanUser({ body: { userId: id }, headers });
     const unbanned = await this.repo.findById(id);
-    if (!unbanned) throw new NotFoundError("User not found.");
+    if (!unbanned) throw new NotFoundError(USER_NOT_FOUND_MESSAGE);
     return toBanDto(unbanned);
   }
 }

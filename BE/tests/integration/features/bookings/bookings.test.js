@@ -403,7 +403,7 @@ describe("Admin/staff bookings (bookings.md §5-10)", () => {
     });
     expect(walkIn.status).toBe(201);
 
-    const existing = await seedBooking({
+    await seedBooking({
       workspaceId: workspace.id,
       bookingDate: FUTURE_DATE,
       startTime: "09:00",
@@ -418,7 +418,6 @@ describe("Admin/staff bookings (bookings.md §5-10)", () => {
     });
     expect(conflict.status).toBe(409);
     expect(conflict.body.error.code).toBe("BOOKING_SLOT_TAKEN");
-    void existing;
   });
 
   it("POST /admin/bookings returns 404 for an unknown userId", async () => {

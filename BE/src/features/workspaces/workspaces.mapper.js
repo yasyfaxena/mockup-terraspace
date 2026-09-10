@@ -1,6 +1,11 @@
-/** @param {unknown} value */
+const MONEY_DECIMAL_PLACES = 2;
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
 function toMoneyString(value) {
-  return Number(value).toFixed(2);
+  return Number(value).toFixed(MONEY_DECIMAL_PLACES);
 }
 
 /**
@@ -38,6 +43,7 @@ export function toWorkspaceListDto(workspace, currency) {
 /**
  * @param {import("@prisma/client").Workspace & { workspaceAmenities: Array<{ amenity: import("@prisma/client").Amenity }>, location: any }} workspace
  * @param {{ currency: string, taxPercent: unknown, advanceBookingDays: number, minimumDurationMinutes: number }} pricingContext
+ * @returns {object}
  */
 export function toWorkspaceDetailDto(workspace, pricingContext) {
   return {
@@ -45,7 +51,7 @@ export function toWorkspaceDetailDto(workspace, pricingContext) {
     pricing: {
       pricePerHour: toMoneyString(workspace.pricePerHour),
       currency: pricingContext.currency,
-      taxPercent: Number(pricingContext.taxPercent).toFixed(2),
+      taxPercent: Number(pricingContext.taxPercent).toFixed(MONEY_DECIMAL_PLACES),
       minimumDurationMinutes: pricingContext.minimumDurationMinutes,
       advanceBookingDays: pricingContext.advanceBookingDays,
     },

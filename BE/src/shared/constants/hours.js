@@ -11,7 +11,10 @@ export const DEFAULT_OPENING_HOURS = Object.freeze({ from: "09:00", to: "22:00" 
  * bookings never cross midnight (erd-spec.md §13's `start_time < end_time`). */
 export const ALL_DAY_OPENING_HOURS = Object.freeze({ from: "00:00", to: "23:59" });
 
-/** @param {{ access247: boolean }} location */
+/**
+ * @param {{ access247: boolean }} location
+ * @returns {{ from: string, to: string }}
+ */
 export function openingHoursFor(location) {
   return location.access247 ? ALL_DAY_OPENING_HOURS : DEFAULT_OPENING_HOURS;
 }

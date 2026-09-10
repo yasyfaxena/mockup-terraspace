@@ -265,6 +265,8 @@ rules: {
 },
 ```
 
+> **This snippet targets `eslint-plugin-boundaries` v5/v6 and silently no-ops parts of itself on v7** (installed here — `^7.2.0`). v7 removed file-shaped element patterns entirely (`src/features/*/index.js` and `src/{app,server}.js` above match **folders only**, so `featureApi`/`app` never actually classify anything — every file just falls through to the broader `feature`/unclassified bucket) and renamed `boundaries/element-types` → `boundaries/dependencies` with a new selector shape (`{ from: { element: { type: "…" } }, allow: { to: { element: {...}, file: {...} } } }`, `${from.name}` → `{{from.element.captured.name}}`). The actual `eslint.config.js` in this repo uses `boundaries/dependencies` with `boundaries/files` categories (`featureApi`, `app`) standing in for the file-shaped elements the old syntax could no longer express — same intent (feature → shared/own-files/any-feature's-barrel; app → shared/any-feature's-barrel), current syntax. Worth revisiting if the doc's snippet is ever copied fresh into a new project.
+
 Plus two containment rules:
 
 ```js

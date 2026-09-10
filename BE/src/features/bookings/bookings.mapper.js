@@ -5,22 +5,41 @@ import {
   isCancellationWindowClosed,
 } from "./bookings.time.js";
 
-/** @param {unknown} value */
+const ISO_DATE_LENGTH = 10;
+const ISO_TIME_START = 11;
+const ISO_TIME_END = 16;
+const MS_PER_MINUTE = 60_000;
+const MONEY_DECIMAL_PLACES = 2;
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
 function toMoneyString(value) {
-  return Number(value).toFixed(2);
+  return Number(value).toFixed(MONEY_DECIMAL_PLACES);
 }
 
-/** @param {Date} value */
+/**
+ * @param {Date} value
+ * @returns {string} `YYYY-MM-DD`
+ */
 function toDateString(value) {
-  return value.toISOString().slice(0, 10);
+  return value.toISOString().slice(0, ISO_DATE_LENGTH);
 }
 
-/** @param {Date} value a `@db.Time` column value */
+/**
+ * @param {Date} value a `@db.Time` column value
+ * @returns {string} `HH:mm`
+ */
 function toTimeString(value) {
-  return value.toISOString().slice(11, 16);
+  return value.toISOString().slice(ISO_TIME_START, ISO_TIME_END);
 }
 
-/** @param {{ status: string }} booking @param {boolean} closed */
+/**
+ * @param {{ status: string }} booking
+ * @param {boolean} closed
+ * @returns {boolean}
+ */
 function canCancelFrom(booking, closed) {
   return !closed && booking.status !== "cancelled" && booking.status !== "completed";
 }
@@ -45,6 +64,7 @@ function toWorkspaceListSummary(workspace) {
 
 /**
  * @param {import("@prisma/client").Workspace & { location: any }} workspace
+ * @returns {{ id: string, name: string, type: string, floor: string, location: { id: string, slug: string, name: string, address: string, city: string } }}
  */
 function toWorkspaceDetailSummary(workspace) {
   return {
@@ -121,7 +141,7 @@ export function toBookingDto(booking, context) {
 
   const closed = isCancellationWindowClosed(booking, timezone, context.cancellationWindowHours);
   const accessFrom = new Date(
-    bookingStartInstant(booking, timezone).getTime() - ACCESS_BUFFER_MINUTES * 60 * 1000,
+    bookingStartInstant(booking, timezone).getTime() - ACCESS_BUFFER_MINUTES * MS_PER_MINUTE,
   );
   return {
     ...base,
@@ -150,6 +170,7 @@ export function toBookingDto(booking, context) {
  * Cancellation response (bookings.md §4).
  * @param {import("@prisma/client").Booking} booking
  * @param {boolean} refundEligible
+ * @returns {{ id: string, reference: string, status: string, cancelledAt: string|null, refundEligible: boolean }}
  */
 export function toCancelDto(booking, refundEligible) {
   return {
@@ -164,6 +185,7 @@ export function toCancelDto(booking, refundEligible) {
 /**
  * The staff list shape (bookings.md §5).
  * @param {import("@prisma/client").Booking & { user: any, workspace: any }} booking
+ * @returns {{ id: string, reference: string, status: string, paymentStatus: string, bookingDate: string, startTime: string, endTime: string, totalAmount: string, currency: string, customer: any, workspace: any, createdAt: string }}
  */
 export function toAdminBookingListDto(booking) {
   return {
@@ -189,6 +211,7 @@ export function toAdminBookingListDto(booking) {
 /**
  * The staff detail shape (bookings.md §6).
  * @param {import("@prisma/client").Booking & { user: any, workspace: any }} booking
+ * @returns {object} full row plus `accessCode`, `customer`, and amount breakdown
  */
 export function toAdminBookingDetailDto(booking) {
   return {
@@ -226,6 +249,7 @@ export function toAdminBookingDetailDto(booking) {
  *   id: string, reference: string, status: string, bookingDate: Date, startTime: Date, endTime: Date,
  *   workspaceId: string, workspace: { name: string }, user: { name: string },
  * }} booking
+ * @returns {{ id: string, reference: string, status: string, bookingDate: string, startTime: string, endTime: string, workspaceId: string, workspaceName: string, customerName: string }}
  */
 export function toCalendarEntryDto(booking) {
   return {

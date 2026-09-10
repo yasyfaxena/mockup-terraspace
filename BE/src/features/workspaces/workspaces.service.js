@@ -18,11 +18,17 @@ import {
   toAdminWorkspaceDto,
 } from "./workspaces.mapper.js";
 
-/** @param {string} timezone */
+const WORKSPACE_NOT_FOUND_MESSAGE = "Workspace not found.";
+
+/**
+ * @param {string} timezone
+ * @returns {string}
+ */
 function todayInZone(timezone) {
   return format(toZonedTime(new Date(), timezone), "yyyy-MM-dd");
 }
 
+/** Business rules for the workspace catalog — public read, availability, admin CRUD. */
 export class WorkspacesService {
   /**
    * @param {{
@@ -41,7 +47,10 @@ export class WorkspacesService {
     this.amenities = deps.amenitiesService ?? defaultAmenitiesService;
   }
 
-  /** @param {import("zod").infer<typeof import("./workspaces.schema.js").listWorkspacesQuerySchema>} query */
+  /**
+   * @param {import("zod").infer<typeof import("./workspaces.schema.js").listWorkspacesQuerySchema>} query
+   * @returns {Promise<{ data: import("./workspaces.types.js").WorkspaceListItemDto[], meta: import("../../shared/types/pagination.js").PaginationMeta }>}
+   */
   async listPublic(query) {
     const [{ rows, total }, settings] = await Promise.all([
       this.repo.findPublic(query),
@@ -56,13 +65,14 @@ export class WorkspacesService {
   /**
    * @param {string} id
    * @throws {NotFoundError}
+   * @returns {Promise<object>}
    */
   async getById(id) {
     const [workspace, settings] = await Promise.all([
       this.repo.findByIdPublic(id),
       this.settings.getSettings(),
     ]);
-    if (!workspace) throw new NotFoundError("Workspace not found.");
+    if (!workspace) throw new NotFoundError(WORKSPACE_NOT_FOUND_MESSAGE);
 
     return toWorkspaceDetailDto(workspace, {
       currency: settings.currency,
@@ -78,6 +88,7 @@ export class WorkspacesService {
    * @throws {NotFoundError}
    * @throws {BookingInPastError}
    * @throws {AdvanceBookingExceededError}
+   * @returns {Promise<object>}
    */
   async getAvailability(id, dateStr) {
     const workspace = await this.repo.findBookableById(id);
@@ -107,7 +118,10 @@ export class WorkspacesService {
     };
   }
 
-  /** @param {import("zod").infer<typeof import("./workspaces.schema.js").listAdminWorkspacesQuerySchema>} query */
+  /**
+   * @param {import("zod").infer<typeof import("./workspaces.schema.js").listAdminWorkspacesQuerySchema>} query
+   * @returns {Promise<{ data: import("./workspaces.types.js").AdminWorkspaceDto[], meta: import("../../shared/types/pagination.js").PaginationMeta }>}
+   */
   async listAdmin(query) {
     const { rows, total } = await this.repo.findAllAdmin(query);
     return {
@@ -119,16 +133,18 @@ export class WorkspacesService {
   /**
    * @param {string} id
    * @throws {NotFoundError}
+   * @returns {Promise<import("./workspaces.types.js").AdminWorkspaceDto>}
    */
   async getAdminDetail(id) {
     const workspace = await this.repo.findByIdAdmin(id);
-    if (!workspace) throw new NotFoundError("Workspace not found.");
+    if (!workspace) throw new NotFoundError(WORKSPACE_NOT_FOUND_MESSAGE);
     return toAdminWorkspaceDto(workspace);
   }
 
   /**
    * @param {Record<string, any>} data
    * @throws {NotFoundError} `locationId` does not exist
+   * @returns {Promise<import("./workspaces.types.js").AdminWorkspaceDto>}
    */
   async create(data) {
     // Throws NotFoundError automatically if locationId doesn't exist —
@@ -151,10 +167,11 @@ export class WorkspacesService {
    * @param {string} id
    * @param {Record<string, any>} data
    * @throws {NotFoundError} workspace or new `locationId` not found
+   * @returns {Promise<import("./workspaces.types.js").AdminWorkspaceDto>}
    */
   async update(id, data) {
     const workspace = await this.repo.findById(id);
-    if (!workspace) throw new NotFoundError("Workspace not found.");
+    if (!workspace) throw new NotFoundError(WORKSPACE_NOT_FOUND_MESSAGE);
 
     if (data.locationId !== undefined) {
       await this.locations.getAdminDetail(data.locationId);
@@ -178,10 +195,11 @@ export class WorkspacesService {
    * @param {string} id
    * @throws {NotFoundError}
    * @throws {ConflictError} non-cancelled bookings reference it
+   * @returns {Promise<{ success: true }>}
    */
   async remove(id) {
     const workspace = await this.repo.findById(id);
-    if (!workspace) throw new NotFoundError("Workspace not found.");
+    if (!workspace) throw new NotFoundError(WORKSPACE_NOT_FOUND_MESSAGE);
 
     const activeBookingCount = await this.repo.countActiveBookings(id);
     if (activeBookingCount > 0) {

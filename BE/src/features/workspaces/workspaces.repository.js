@@ -9,6 +9,7 @@ const SORT_FIELD = Object.freeze({
 
 const NON_DISABLED_AVAILABILITIES = Object.freeze(["available", "limited", "full", "maintenance"]);
 
+/** Prisma access for the `workspaces` table and its amenity junction. */
 export class WorkspacesRepository {
   /** @param {{ db?: import("@prisma/client").PrismaClient }} [deps] */
   constructor(deps = {}) {
@@ -16,20 +17,20 @@ export class WorkspacesRepository {
   }
 
   /**
-   * `availability = 'disabled'` and workspaces at inactive locations are
-   * always excluded, regardless of what the caller asks for (workspaces.md §1).
+   * The `findPublic` `where` clause — split out so each method's
+   * cyclomatic complexity stays under the linter.md §3 limit.
    * @param {{
    *   locationId?: string, locationSlug?: string, type?: string[], availability?: string[],
    *   amenityIds?: string[], minPrice?: number, maxPrice?: number,
-   *   sort: string, order: string, page: number, limit: number,
    * }} params
+   * @returns {import("@prisma/client").Prisma.WorkspaceWhereInput}
    */
-  async findPublic(params) {
+  #publicWhere(params) {
     const allowedAvailabilities = (
       params.availability?.length ? params.availability : NON_DISABLED_AVAILABILITIES
     ).filter((value) => value !== "disabled");
 
-    const where = /** @type {import("@prisma/client").Prisma.WorkspaceWhereInput} */ ({
+    return /** @type {import("@prisma/client").Prisma.WorkspaceWhereInput} */ ({
       availability: { in: allowedAvailabilities },
       location: {
         status: "active",
@@ -43,6 +44,20 @@ export class WorkspacesRepository {
         workspaceAmenities: { some: { amenityId } },
       })),
     });
+  }
+
+  /**
+   * `availability = 'disabled'` and workspaces at inactive locations are
+   * always excluded, regardless of what the caller asks for (workspaces.md §1).
+   * @param {{
+   *   locationId?: string, locationSlug?: string, type?: string[], availability?: string[],
+   *   amenityIds?: string[], minPrice?: number, maxPrice?: number,
+   *   sort: string, order: string, page: number, limit: number,
+   * }} params
+   * @returns {Promise<{ rows: any[], total: number }>}
+   */
+  async findPublic(params) {
+    const where = this.#publicWhere(params);
 
     const [rows, total] = await Promise.all([
       this.db.workspace.findMany({
@@ -61,7 +76,10 @@ export class WorkspacesRepository {
     return { rows, total };
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<any>}
+   */
   findByIdPublic(id) {
     return this.db.workspace.findFirst({
       where: { id, availability: { not: "disabled" }, location: { status: "active" } },
@@ -72,11 +90,38 @@ export class WorkspacesRepository {
     });
   }
 
-  /** Bookable = not disabled, at an active location. @param {string} id */
+  /**
+   * Bookable = not disabled, at an active location.
+   * @param {string} id
+   * @returns {Promise<any>}
+   */
   findBookableById(id) {
     return this.db.workspace.findFirst({
       where: { id, availability: { not: "disabled" }, location: { status: "active" } },
       include: { location: { select: { timezone: true, access247: true } } },
+    });
+  }
+
+  /**
+   * The `findAllAdmin` `where` clause — split out so each method's
+   * cyclomatic complexity stays under the linter.md §3 limit.
+   * @param {{
+   *   locationId?: string, type?: string[], availability?: string[], amenityIds?: string[],
+   *   minPrice?: number, maxPrice?: number, q?: string,
+   * }} params
+   * @returns {import("@prisma/client").Prisma.WorkspaceWhereInput}
+   */
+  #adminWhere(params) {
+    return /** @type {import("@prisma/client").Prisma.WorkspaceWhereInput} */ ({
+      ...(params.locationId ? { locationId: params.locationId } : {}),
+      ...(params.type?.length ? { type: { in: params.type } } : {}),
+      ...(params.availability?.length ? { availability: { in: params.availability } } : {}),
+      ...(params.q ? { name: { contains: params.q, mode: "insensitive" } } : {}),
+      ...(params.minPrice !== undefined ? { pricePerHour: { gte: params.minPrice } } : {}),
+      ...(params.maxPrice !== undefined ? { pricePerHour: { lte: params.maxPrice } } : {}),
+      AND: (params.amenityIds ?? []).map((amenityId) => ({
+        workspaceAmenities: { some: { amenityId } },
+      })),
     });
   }
 
@@ -88,19 +133,10 @@ export class WorkspacesRepository {
    *   minPrice?: number, maxPrice?: number, q?: string,
    *   sort: string, order: string, page: number, limit: number,
    * }} params
+   * @returns {Promise<{ rows: any[], total: number }>}
    */
   async findAllAdmin(params) {
-    const where = /** @type {import("@prisma/client").Prisma.WorkspaceWhereInput} */ ({
-      ...(params.locationId ? { locationId: params.locationId } : {}),
-      ...(params.type?.length ? { type: { in: params.type } } : {}),
-      ...(params.availability?.length ? { availability: { in: params.availability } } : {}),
-      ...(params.q ? { name: { contains: params.q, mode: "insensitive" } } : {}),
-      ...(params.minPrice !== undefined ? { pricePerHour: { gte: params.minPrice } } : {}),
-      ...(params.maxPrice !== undefined ? { pricePerHour: { lte: params.maxPrice } } : {}),
-      AND: (params.amenityIds ?? []).map((amenityId) => ({
-        workspaceAmenities: { some: { amenityId } },
-      })),
-    });
+    const where = this.#adminWhere(params);
 
     const [rows, total] = await Promise.all([
       this.db.workspace.findMany({
@@ -120,7 +156,10 @@ export class WorkspacesRepository {
     return { rows, total };
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<any>}
+   */
   findByIdAdmin(id) {
     return this.db.workspace.findUnique({
       where: { id },
@@ -132,12 +171,19 @@ export class WorkspacesRepository {
     });
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<import("@prisma/client").Workspace | null>}
+   */
   findById(id) {
     return this.db.workspace.findUnique({ where: { id } });
   }
 
-  /** Non-cancelled bookings — the delete guard (workspaces.md §7). @param {string} id */
+  /**
+   * Non-cancelled bookings — the delete guard (workspaces.md §7).
+   * @param {string} id
+   * @returns {Promise<number>}
+   */
   countActiveBookings(id) {
     return this.db.booking.count({ where: { workspaceId: id, status: { not: "cancelled" } } });
   }
@@ -145,6 +191,7 @@ export class WorkspacesRepository {
   /**
    * @param {Record<string, unknown>} data
    * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   * @returns {Promise<import("@prisma/client").Workspace>}
    */
   create(data, client = this.db) {
     return client.workspace.create({ data: /** @type {any} */ (data) });
@@ -154,12 +201,16 @@ export class WorkspacesRepository {
    * @param {string} id
    * @param {Record<string, unknown>} data
    * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   * @returns {Promise<import("@prisma/client").Workspace>}
    */
   update(id, data, client = this.db) {
     return client.workspace.update({ where: { id }, data: /** @type {any} */ (data) });
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<import("@prisma/client").Workspace>}
+   */
   delete(id) {
     return this.db.workspace.delete({ where: { id } });
   }
@@ -168,6 +219,7 @@ export class WorkspacesRepository {
    * @param {string} workspaceId
    * @param {string[]} amenityIds
    * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   * @returns {Promise<void>}
    */
   async setAmenities(workspaceId, amenityIds, client = this.db) {
     if (amenityIds.length === 0) return;
@@ -180,14 +232,18 @@ export class WorkspacesRepository {
    * @param {string} workspaceId
    * @param {string[]} amenityIds
    * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   * @returns {Promise<void>}
    */
   async replaceAmenities(workspaceId, amenityIds, client = this.db) {
     await client.workspaceAmenity.deleteMany({ where: { workspaceId } });
     await this.setAmenities(workspaceId, amenityIds, client);
   }
 
-  /** @param {(tx: import("@prisma/client").Prisma.TransactionClient) => Promise<any>} callback */
-  transaction(callback) {
-    return this.db.$transaction(callback);
+  /**
+   * @param {(tx: import("@prisma/client").Prisma.TransactionClient) => Promise<any>} run
+   * @returns {Promise<any>}
+   */
+  transaction(run) {
+    return this.db.$transaction(run);
   }
 }

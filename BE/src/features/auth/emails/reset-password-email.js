@@ -22,6 +22,7 @@ const BUTTON_STYLE = {
 /**
  * No JSX — see verification-email.js for why.
  * @param {{ name: string, url: string }} props
+ * @returns {import("react").ReactElement}
  */
 export function ResetPasswordEmail({ name, url }) {
   return createElement(

@@ -1,8 +1,16 @@
 import { fromZonedTime } from "date-fns-tz";
 
-/** @param {Date} time a `@db.Time` column value — a fixed epoch date carrying only the time */
+const ISO_DATE_LENGTH = 10;
+const ISO_TIME_START = 11;
+const ISO_TIME_END = 16;
+const MS_PER_HOUR = 3_600_000;
+
+/**
+ * @param {Date} time a `@db.Time` column value — a fixed epoch date carrying only the time
+ * @returns {string} `HH:mm`
+ */
 function toHHMM(time) {
-  return time.toISOString().slice(11, 16);
+  return time.toISOString().slice(ISO_TIME_START, ISO_TIME_END);
 }
 
 /**
@@ -11,24 +19,33 @@ function toHHMM(time) {
  * @param {string} dateStr `YYYY-MM-DD`
  * @param {string} hhmm
  * @param {string} timezone
+ * @returns {Date}
  */
 export function instantFromLocal(dateStr, hhmm, timezone) {
   return fromZonedTime(`${dateStr}T${hhmm}:00`, timezone);
 }
 
-/** @param {{ bookingDate: Date, startTime: Date }} booking @param {string} timezone */
+/**
+ * @param {{ bookingDate: Date, startTime: Date }} booking
+ * @param {string} timezone
+ * @returns {Date}
+ */
 export function bookingStartInstant(booking, timezone) {
   return instantFromLocal(
-    booking.bookingDate.toISOString().slice(0, 10),
+    booking.bookingDate.toISOString().slice(0, ISO_DATE_LENGTH),
     toHHMM(booking.startTime),
     timezone,
   );
 }
 
-/** @param {{ bookingDate: Date, endTime: Date }} booking @param {string} timezone */
+/**
+ * @param {{ bookingDate: Date, endTime: Date }} booking
+ * @param {string} timezone
+ * @returns {Date}
+ */
 export function bookingEndInstant(booking, timezone) {
   return instantFromLocal(
-    booking.bookingDate.toISOString().slice(0, 10),
+    booking.bookingDate.toISOString().slice(0, ISO_DATE_LENGTH),
     toHHMM(booking.endTime),
     timezone,
   );
@@ -43,6 +60,7 @@ export function bookingEndInstant(booking, timezone) {
  * @param {string} timezone
  * @param {number} cancellationWindowHours
  * @param {Date} [now]
+ * @returns {boolean}
  */
 export function isCancellationWindowClosed(
   booking,
@@ -51,5 +69,5 @@ export function isCancellationWindowClosed(
   now = new Date(),
 ) {
   const msUntilStart = bookingStartInstant(booking, timezone).getTime() - now.getTime();
-  return msUntilStart < cancellationWindowHours * 60 * 60 * 1000;
+  return msUntilStart < cancellationWindowHours * MS_PER_HOUR;
 }

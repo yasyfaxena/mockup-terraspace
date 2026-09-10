@@ -8,18 +8,28 @@ const SORT_COLUMN = Object.freeze({
   totalBookings: "total_bookings",
 });
 
+const ISO_DATE_LENGTH = 10;
+const DEFAULT_RECENT_BOOKINGS = 10;
+
+/** Prisma access for the `users` table, plus SQL-aggregated admin views. */
 export class UsersRepository {
   /** @param {{ db?: import("@prisma/client").PrismaClient }} [deps] */
   constructor(deps = {}) {
     this.db = deps.db ?? prisma;
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<import("@prisma/client").User | null>}
+   */
   findById(id) {
     return this.db.user.findUnique({ where: { id } });
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<Array<{ providerId: string, createdAt: Date }>>}
+   */
   findAuthMethods(id) {
     return this.db.account.findMany({
       where: { userId: id },
@@ -28,9 +38,12 @@ export class UsersRepository {
     });
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<{ totalBookings: number, upcomingBookings: number, totalSpent: unknown }>}
+   */
   async getBookingStats(id) {
-    const today = new Date(new Date().toISOString().slice(0, 10));
+    const today = new Date(new Date().toISOString().slice(0, ISO_DATE_LENGTH));
     const [totalBookings, upcomingBookings, paidAggregate] = await Promise.all([
       this.db.booking.count({ where: { userId: id, status: { not: "cancelled" } } }),
       this.db.booking.count({
@@ -52,8 +65,12 @@ export class UsersRepository {
     };
   }
 
-  /** @param {string} id */
-  recentBookings(id, take = 10) {
+  /**
+   * @param {string} id
+   * @param {number} [take]
+   * @returns {Promise<any[]>}
+   */
+  recentBookings(id, take = DEFAULT_RECENT_BOOKINGS) {
     return this.db.booking.findMany({
       where: { userId: id },
       orderBy: { createdAt: "desc" },
@@ -62,7 +79,10 @@ export class UsersRepository {
     });
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<number>}
+   */
   countActiveSessions(id) {
     return this.db.session.count({ where: { userId: id, expiresAt: { gt: new Date() } } });
   }
@@ -71,6 +91,7 @@ export class UsersRepository {
    * Admin listing with SQL-computed aggregates — never fetches every
    * profile and every booking to reduce in application code (users.md §3).
    * @param {{ q?: string, role?: string, banned?: boolean, sort: string, order: string, page: number, limit: number }} params
+   * @returns {Promise<{ rows: any[], total: number }>}
    */
   async listAdmin({ q, role, banned, sort, order, page, limit }) {
     const conditions = [];
@@ -133,6 +154,7 @@ export class UsersRepository {
   /**
    * @param {string} id
    * @param {{ name?: string, phone?: string|null, company?: string|null, image?: string|null }} data
+   * @returns {Promise<import("@prisma/client").User>}
    */
   updateProfile(id, data) {
     return this.db.user.update({ where: { id }, data });
@@ -141,29 +163,42 @@ export class UsersRepository {
   /**
    * @param {string} id
    * @param {{ name?: string, phone?: string|null, company?: string|null, email?: string, emailVerified?: boolean }} data
+   * @returns {Promise<import("@prisma/client").User>}
    */
   adminUpdateProfile(id, data) {
     return this.db.user.update({ where: { id }, data });
   }
 
-  /** @param {string} [excludeId] */
+  /**
+   * @param {string} [excludeId]
+   * @returns {Promise<number>}
+   */
   countAdmins(excludeId) {
     return this.db.user.count({
       where: { role: "admin", ...(excludeId ? { id: { not: excludeId } } : {}) },
     });
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<number>}
+   */
   countBookings(id) {
     return this.db.booking.count({ where: { userId: id } });
   }
 
-  /** @param {string} email */
+  /**
+   * @param {string} email
+   * @returns {Promise<import("@prisma/client").User | null>}
+   */
   findByEmail(email) {
     return this.db.user.findUnique({ where: { email } });
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<import("@prisma/client").User>}
+   */
   verifyEmail(id) {
     return this.db.user.update({ where: { id }, data: { emailVerified: true } });
   }

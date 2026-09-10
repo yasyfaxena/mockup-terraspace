@@ -3,6 +3,8 @@ import { env } from "./shared/config/env.js";
 import { logger } from "./shared/lib/logger.js";
 import { prisma } from "./shared/database/client.js";
 
+const SHUTDOWN_TIMEOUT_MS = 10_000;
+
 // ── Boot ────────────────────────────────────────────────────
 const server = app.listen(env.PORT, () => {
   logger.info({ port: env.PORT, env: env.NODE_ENV }, "Server started");
@@ -23,7 +25,7 @@ async function shutdown(code = 0) {
     logger.warn("Forcing shutdown after timeout");
     // eslint-disable-next-line n/no-process-exit -- terminal shutdown step, nothing left to throw to
     process.exit(1);
-  }, 10_000).unref();
+  }, SHUTDOWN_TIMEOUT_MS).unref();
 }
 
 process.on("SIGTERM", () => shutdown(0));

@@ -22,6 +22,7 @@ export function toPaginationMeta({ page, limit, total }) {
  * always returns an array — Express's query parser gives either shape
  * depending on whether the client repeated the key.
  * @param {import("zod").ZodType<string>} [itemSchema]
+ * @returns {import("zod").ZodType<string[] | undefined>}
  */
 export function repeatableQueryParam(itemSchema = z.string()) {
   return z

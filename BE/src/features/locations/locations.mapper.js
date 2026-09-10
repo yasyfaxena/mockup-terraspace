@@ -1,14 +1,26 @@
 import { DESK_TYPES } from "../../shared/constants/workspace.js";
 
-/** @param {unknown} value */
+const MONEY_DECIMAL_PLACES = 2;
+const COORDINATE_DECIMAL_PLACES = 6;
+const OCCUPANCY_PERCENT = 100;
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
 function toMoneyString(value) {
   if (value === null || value === undefined) return "0.00";
-  return Number(value).toFixed(2);
+  return Number(value).toFixed(MONEY_DECIMAL_PLACES);
 }
 
-/** @param {unknown} value */
+/**
+ * @param {unknown} value
+ * @returns {string | null}
+ */
 function toCoordinateString(value) {
-  return value === null || value === undefined ? null : Number(value).toFixed(6);
+  return value === null || value === undefined
+    ? null
+    : Number(value).toFixed(COORDINATE_DECIMAL_PLACES);
 }
 
 /**
@@ -17,6 +29,7 @@ function toCoordinateString(value) {
  * where fetching one location's workspaces in a single query is already
  * cheap enough that a second SQL round trip would be pure overhead.
  * @param {Array<{ type: string, availability: string, pricePerHour: unknown }>} workspaces
+ * @returns {{ desksTotal: number, desksAvailable: number, roomsTotal: number, roomsAvailable: number, priceFrom: number, types: string[] }}
  */
 export function computeWorkspaceStats(workspaces) {
   let desksTotal = 0;
@@ -54,7 +67,7 @@ export function computeWorkspaceStats(workspaces) {
 export function toStatsDto(row) {
   const total = row.desksTotal + row.roomsTotal;
   const available = row.desksAvailable + row.roomsAvailable;
-  const occupancy = total > 0 ? Math.round(((total - available) / total) * 100) : 0;
+  const occupancy = total > 0 ? Math.round(((total - available) / total) * OCCUPANCY_PERCENT) : 0;
   /** @type {"available" | "limited" | "unavailable"} */
   let availability = "limited";
   if (available === 0) {
@@ -75,7 +88,10 @@ export function toStatsDto(row) {
   };
 }
 
-/** @param {import("@prisma/client").Amenity} amenity */
+/**
+ * @param {import("@prisma/client").Amenity} amenity
+ * @returns {{ id: string, name: string, nameId: string | null, category: string, icon: string }}
+ */
 export function toAmenitySummaryDto(amenity) {
   return {
     id: amenity.id,
@@ -110,7 +126,10 @@ export function toLocationListDto(row, amenities) {
   };
 }
 
-/** @param {import("@prisma/client").Workspace & { workspaceAmenities: Array<{ amenity: import("@prisma/client").Amenity }> }} workspace */
+/**
+ * @param {import("@prisma/client").Workspace & { workspaceAmenities: Array<{ amenity: import("@prisma/client").Amenity }> }} workspace
+ * @returns {object}
+ */
 function toWorkspaceSummaryDto(workspace) {
   return {
     id: workspace.id,
@@ -136,6 +155,7 @@ function toWorkspaceSummaryDto(workspace) {
  *   workspaces: Array<import("@prisma/client").Workspace & { workspaceAmenities: Array<{ amenity: import("@prisma/client").Amenity }> }>,
  * }} location
  * @param {string} currency
+ * @returns {object}
  */
 export function toLocationDetailDto(location, currency) {
   const listShape = toLocationListDto(

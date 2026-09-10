@@ -1,5 +1,6 @@
 import { prisma } from "../../../shared/database/client.js";
 
+/** Reads whatever bookings/availability.service.js needs to compute free/busy intervals. */
 export class AvailabilityRepository {
   /** @param {{ db?: import("@prisma/client").PrismaClient }} [deps] */
   constructor(deps = {}) {
@@ -11,6 +12,7 @@ export class AvailabilityRepository {
    * exclusion constraint's partial `WHERE` (erd-spec.md §13).
    * @param {string} workspaceId
    * @param {Date} bookingDate
+   * @returns {Promise<Array<{ startTime: Date, endTime: Date }>>}
    */
   findBlockingBookings(workspaceId, bookingDate) {
     return this.db.booking.findMany({

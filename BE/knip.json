@@ -16,8 +16,6 @@
     "express-rate-limit",
     "node-cron",
     "zod-openapi",
-    "eslint-plugin-boundaries",
-    "eslint-plugin-import",
     "nock",
     "@types/html-to-text"
   ],

@@ -1,5 +1,6 @@
 import { prisma } from "../../shared/database/client.js";
 
+/** Prisma access for the `locations` table and its amenity junction. */
 export class LocationsRepository {
   /** @param {{ db?: import("@prisma/client").PrismaClient }} [deps] */
   constructor(deps = {}) {
@@ -11,6 +12,7 @@ export class LocationsRepository {
    * every workspace regardless of `availability`, never fetching rows to
    * reduce in application code (locations.md §1, the `catalog.ts:106` fix).
    * @param {{ city?: string, q?: string, amenityIds?: string[] }} filters
+   * @returns {Promise<any[]>}
    */
   async findActivePublic({ city, q, amenityIds = [] }) {
     const conditions = ["l.status = 'active'"];
@@ -72,7 +74,10 @@ export class LocationsRepository {
     return rows;
   }
 
-  /** @param {string[]} locationIds */
+  /**
+   * @param {string[]} locationIds
+   * @returns {Promise<any[]>}
+   */
   async findAmenitiesForLocations(locationIds) {
     if (locationIds.length === 0) return [];
     return this.db.locationAmenity.findMany({
@@ -81,7 +86,10 @@ export class LocationsRepository {
     });
   }
 
-  /** @param {string} slug */
+  /**
+   * @param {string} slug
+   * @returns {Promise<any>}
+   */
   findBySlugActive(slug) {
     return this.db.location.findFirst({
       where: { slug, status: "active" },
@@ -92,7 +100,10 @@ export class LocationsRepository {
     });
   }
 
-  /** @param {{ status?: string, q?: string }} filters */
+  /**
+   * @param {{ status?: string, q?: string }} filters
+   * @returns {Promise<any[]>}
+   */
   findAllAdmin({ status, q }) {
     const where = /** @type {import("@prisma/client").Prisma.LocationWhereInput} */ ({
       ...(status ? { status } : {}),
@@ -116,7 +127,10 @@ export class LocationsRepository {
     });
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<any>}
+   */
   findByIdAdmin(id) {
     return this.db.location.findUnique({
       where: { id },
@@ -127,17 +141,26 @@ export class LocationsRepository {
     });
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<import("@prisma/client").Location | null>}
+   */
   findById(id) {
     return this.db.location.findUnique({ where: { id } });
   }
 
-  /** @param {string} slug */
+  /**
+   * @param {string} slug
+   * @returns {Promise<import("@prisma/client").Location | null>}
+   */
   findBySlug(slug) {
     return this.db.location.findUnique({ where: { slug } });
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<number>}
+   */
   countWorkspaces(id) {
     return this.db.workspace.count({ where: { locationId: id } });
   }
@@ -145,6 +168,7 @@ export class LocationsRepository {
   /**
    * @param {Record<string, unknown>} data
    * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   * @returns {Promise<import("@prisma/client").Location>}
    */
   create(data, client = this.db) {
     return client.location.create({ data: /** @type {any} */ (data) });
@@ -154,12 +178,16 @@ export class LocationsRepository {
    * @param {string} id
    * @param {Record<string, unknown>} data
    * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   * @returns {Promise<import("@prisma/client").Location>}
    */
   update(id, data, client = this.db) {
     return client.location.update({ where: { id }, data: /** @type {any} */ (data) });
   }
 
-  /** @param {string} id */
+  /**
+   * @param {string} id
+   * @returns {Promise<import("@prisma/client").Location>}
+   */
   delete(id) {
     return this.db.location.delete({ where: { id } });
   }
@@ -168,6 +196,7 @@ export class LocationsRepository {
    * @param {string} locationId
    * @param {string[]} amenityIds
    * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   * @returns {Promise<void>}
    */
   async setAmenities(locationId, amenityIds, client = this.db) {
     if (amenityIds.length === 0) return;
@@ -182,14 +211,18 @@ export class LocationsRepository {
    * @param {string} locationId
    * @param {string[]} amenityIds
    * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   * @returns {Promise<void>}
    */
   async replaceAmenities(locationId, amenityIds, client = this.db) {
     await client.locationAmenity.deleteMany({ where: { locationId } });
     await this.setAmenities(locationId, amenityIds, client);
   }
 
-  /** @param {(tx: import("@prisma/client").Prisma.TransactionClient) => Promise<any>} callback */
-  transaction(callback) {
-    return this.db.$transaction(callback);
+  /**
+   * @param {(tx: import("@prisma/client").Prisma.TransactionClient) => Promise<any>} run
+   * @returns {Promise<any>}
+   */
+  transaction(run) {
+    return this.db.$transaction(run);
   }
 }

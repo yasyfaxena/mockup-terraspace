@@ -12,6 +12,7 @@ export class SettingsService {
     this.repo = deps.settingsRepository ?? new SettingsRepository();
   }
 
+  /** @returns {Promise<import("@prisma/client").AdminSettings>} */
   getSettings() {
     return this.repo.findSingleton();
   }

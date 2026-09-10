@@ -1,5 +1,6 @@
 import { amenitiesService } from "./amenities.service.js";
 import { stringParam } from "../../shared/lib/params.js";
+import { HTTP_STATUS } from "../../shared/constants/http-status.js";
 
 /** @type {import("express").RequestHandler} */
 export const listPublic = async (req, res, next) => {
@@ -22,7 +23,7 @@ export const listAdmin = async (req, res, next) => {
 /** @type {import("express").RequestHandler} */
 export const create = async (req, res, next) => {
   try {
-    return res.status(201).json(await amenitiesService.create(req.body));
+    return res.status(HTTP_STATUS.CREATED).json(await amenitiesService.create(req.body));
   } catch (err) {
     return next(err);
   }

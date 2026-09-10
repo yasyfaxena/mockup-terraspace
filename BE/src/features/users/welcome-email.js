@@ -13,6 +13,7 @@ const CONTAINER_STYLE = {
 /**
  * No JSX — see features/auth/emails/verification-email.js for why.
  * @param {{ name: string }} props
+ * @returns {import("react").ReactElement}
  */
 export function WelcomeEmail({ name }) {
   return createElement(

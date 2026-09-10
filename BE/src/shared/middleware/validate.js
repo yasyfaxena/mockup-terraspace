@@ -7,7 +7,6 @@
  * "Cannot set property query". The validated/defaulted query therefore
  * lands on `req.validatedQuery` instead; read that in the controller, not
  * `req.query`, when a route validates its query.
- *
  * @param {{ body?: import("zod").ZodType, query?: import("zod").ZodType, params?: import("zod").ZodType }} schemas
  * @returns {import("express").RequestHandler}
  */

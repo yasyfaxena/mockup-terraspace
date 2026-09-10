@@ -12,7 +12,6 @@
  * type. Cast with this typedef wherever a handler reads them, rather than
  * augmenting the global `Express.Request` interface — that would need a
  * `.d.ts` file, and this project has none (be-architecture.md).
- *
  * @typedef {import("express").Request & {
  *   user?: SessionUser,
  *   session?: { id: string, token: string, expiresAt: Date, userId: string, impersonatedBy?: string | null },
@@ -23,7 +22,6 @@
  * Same shape, but `user`/`session` are required — for controllers reached
  * only after `requireAuth` has already run and guaranteed both are set.
  * Use {@link asAuthed} to cast a plain `Request` to this shape.
- *
  * @typedef {import("express").Request & {
  *   user: SessionUser,
  *   session: { id: string, token: string, expiresAt: Date, userId: string, impersonatedBy?: string | null },

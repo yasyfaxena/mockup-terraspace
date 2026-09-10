@@ -7,6 +7,11 @@ import {
 } from "../../../../src/features/users/users.errors.js";
 import { NotFoundError } from "../../../../src/shared/errors/http-errors.js";
 
+function fakeHeaders() {
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- Headers is unflagged in every Node this repo supports; the linter's version detection is just conservative
+  return new Headers();
+}
+
 /** @param {{ repo?: object, auth?: object }} [overrides] */
 function makeService(overrides = {}) {
   const repo = {
@@ -62,7 +67,7 @@ describe("UsersService.deleteUser", () => {
     const { service, repo } = makeService();
     repo.findById.mockResolvedValue(null);
     await expect(
-      service.deleteUser("missing", { actorId: "actor", headers: new Headers() }),
+      service.deleteUser("missing", { actorId: "actor", headers: fakeHeaders() }),
     ).rejects.toBeInstanceOf(NotFoundError);
   });
 
@@ -70,7 +75,7 @@ describe("UsersService.deleteUser", () => {
     const { service, repo } = makeService();
     repo.findById.mockResolvedValue({ id: "u1", role: "customer" });
     await expect(
-      service.deleteUser("u1", { actorId: "u1", headers: new Headers() }),
+      service.deleteUser("u1", { actorId: "u1", headers: fakeHeaders() }),
     ).rejects.toBeInstanceOf(LastAdminError);
   });
 
@@ -78,7 +83,7 @@ describe("UsersService.deleteUser", () => {
     const { service, repo } = makeService({ repo: { countAdmins: vi.fn().mockResolvedValue(0) } });
     repo.findById.mockResolvedValue({ id: "u2", role: "admin" });
     await expect(
-      service.deleteUser("u2", { actorId: "actor", headers: new Headers() }),
+      service.deleteUser("u2", { actorId: "actor", headers: fakeHeaders() }),
     ).rejects.toBeInstanceOf(LastAdminError);
   });
 
@@ -88,7 +93,7 @@ describe("UsersService.deleteUser", () => {
     });
     repo.findById.mockResolvedValue({ id: "u3", role: "customer" });
     await expect(
-      service.deleteUser("u3", { actorId: "actor", headers: new Headers() }),
+      service.deleteUser("u3", { actorId: "actor", headers: fakeHeaders() }),
     ).rejects.toBeInstanceOf(UserHasBookingsError);
   });
 
@@ -96,7 +101,7 @@ describe("UsersService.deleteUser", () => {
     const { service, repo, auth } = makeService();
     repo.findById.mockResolvedValue({ id: "u4", role: "customer" });
 
-    const result = await service.deleteUser("u4", { actorId: "actor", headers: new Headers() });
+    const result = await service.deleteUser("u4", { actorId: "actor", headers: fakeHeaders() });
 
     expect(result).toEqual({ success: true });
     expect(auth.api.removeUser).toHaveBeenCalledWith({
@@ -111,7 +116,7 @@ describe("UsersService.banUser", () => {
     const { service, repo } = makeService();
     repo.findById.mockResolvedValue({ id: "u1", role: "customer" });
     await expect(
-      service.banUser("u1", { reason: "x" }, { actorId: "u1", headers: new Headers() }),
+      service.banUser("u1", { reason: "x" }, { actorId: "u1", headers: fakeHeaders() }),
     ).rejects.toBeInstanceOf(LastAdminError);
   });
 
@@ -119,7 +124,7 @@ describe("UsersService.banUser", () => {
     const { service, repo } = makeService({ repo: { countAdmins: vi.fn().mockResolvedValue(0) } });
     repo.findById.mockResolvedValue({ id: "u2", role: "admin" });
     await expect(
-      service.banUser("u2", { reason: "x" }, { actorId: "actor", headers: new Headers() }),
+      service.banUser("u2", { reason: "x" }, { actorId: "actor", headers: fakeHeaders() }),
     ).rejects.toBeInstanceOf(LastAdminError);
   });
 });
@@ -129,7 +134,7 @@ describe("UsersService.updateAdminUser", () => {
     const { service, repo } = makeService({ repo: { countAdmins: vi.fn().mockResolvedValue(0) } });
     repo.findById.mockResolvedValue({ id: "u1", role: "admin", email: "a@test.com" });
     await expect(
-      service.updateAdminUser("u1", { role: "customer" }, { headers: new Headers() }),
+      service.updateAdminUser("u1", { role: "customer" }, { headers: fakeHeaders() }),
     ).rejects.toBeInstanceOf(LastAdminError);
   });
 
@@ -138,7 +143,7 @@ describe("UsersService.updateAdminUser", () => {
     repo.findById.mockResolvedValue({ id: "u1", role: "customer", email: "old@test.com" });
     repo.findByEmail.mockResolvedValue({ id: "other" });
     await expect(
-      service.updateAdminUser("u1", { email: "new@test.com" }, { headers: new Headers() }),
+      service.updateAdminUser("u1", { email: "new@test.com" }, { headers: fakeHeaders() }),
     ).rejects.toBeInstanceOf(EmailAlreadyExistsError);
   });
 });

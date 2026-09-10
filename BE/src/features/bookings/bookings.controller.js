@@ -1,11 +1,14 @@
 import { bookingsService } from "./bookings.service.js";
 import { asAuthed } from "../../shared/types/express.jsdoc.js";
 import { stringParam } from "../../shared/lib/params.js";
+import { HTTP_STATUS } from "../../shared/constants/http-status.js";
 
 /** @type {import("express").RequestHandler} */
 export const create = async (req, res, next) => {
   try {
-    return res.status(201).json(await bookingsService.create(asAuthed(req).user.id, req.body));
+    return res
+      .status(HTTP_STATUS.CREATED)
+      .json(await bookingsService.create(asAuthed(req).user.id, req.body));
   } catch (err) {
     return next(err);
   }
@@ -62,7 +65,7 @@ export const getAdminDetail = async (req, res, next) => {
 /** @type {import("express").RequestHandler} */
 export const createStaff = async (req, res, next) => {
   try {
-    return res.status(201).json(await bookingsService.createStaff(req.body));
+    return res.status(HTTP_STATUS.CREATED).json(await bookingsService.createStaff(req.body));
   } catch (err) {
     return next(err);
   }

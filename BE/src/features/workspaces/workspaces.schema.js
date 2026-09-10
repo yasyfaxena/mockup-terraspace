@@ -9,6 +9,9 @@ const WORKSPACE_TYPES = [
   "event_space",
 ];
 const WORKSPACE_AVAILABILITIES = ["available", "limited", "full", "maintenance", "disabled"];
+const NAME_MAX_LENGTH = 150;
+const FLOOR_MAX_LENGTH = 50;
+const PROVIDER_MAX_LENGTH = 50;
 
 export const listWorkspacesQuerySchema = paginationQuerySchema.extend({
   locationId: z.string().uuid().optional(),
@@ -40,32 +43,32 @@ export const listAdminWorkspacesQuerySchema = paginationQuerySchema.extend({
 
 export const createWorkspaceSchema = z.object({
   locationId: z.string().uuid(),
-  name: z.string().trim().min(1).max(150),
+  name: z.string().trim().min(1).max(NAME_MAX_LENGTH),
   type: z.enum(WORKSPACE_TYPES),
-  floor: z.string().max(50).default(""),
+  floor: z.string().max(FLOOR_MAX_LENGTH).default(""),
   pricePerHour: z.coerce.number().min(0).default(0),
   availability: z.enum(WORKSPACE_AVAILABILITIES).default("available"),
   simpleBooking: z.boolean().default(false),
   imageUrl: z.string().url().nullable().default(null),
   description: z.string().default(""),
   cancellationPolicy: z.string().default(""),
-  calendarSyncProvider: z.string().max(50).nullable().default(null),
-  qrProvider: z.string().max(50).nullable().default(null),
+  calendarSyncProvider: z.string().max(PROVIDER_MAX_LENGTH).nullable().default(null),
+  qrProvider: z.string().max(PROVIDER_MAX_LENGTH).nullable().default(null),
   amenityIds: z.array(z.string().uuid()).default([]),
 });
 
 export const updateWorkspaceSchema = z.object({
   locationId: z.string().uuid().optional(),
-  name: z.string().trim().min(1).max(150).optional(),
+  name: z.string().trim().min(1).max(NAME_MAX_LENGTH).optional(),
   type: z.enum(WORKSPACE_TYPES).optional(),
-  floor: z.string().max(50).optional(),
+  floor: z.string().max(FLOOR_MAX_LENGTH).optional(),
   pricePerHour: z.coerce.number().min(0).optional(),
   availability: z.enum(WORKSPACE_AVAILABILITIES).optional(),
   simpleBooking: z.boolean().optional(),
   imageUrl: z.string().url().nullable().optional(),
   description: z.string().optional(),
   cancellationPolicy: z.string().optional(),
-  calendarSyncProvider: z.string().max(50).nullable().optional(),
-  qrProvider: z.string().max(50).nullable().optional(),
+  calendarSyncProvider: z.string().max(PROVIDER_MAX_LENGTH).nullable().optional(),
+  qrProvider: z.string().max(PROVIDER_MAX_LENGTH).nullable().optional(),
   amenityIds: z.array(z.string().uuid()).optional(),
 });

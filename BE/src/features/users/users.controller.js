@@ -1,9 +1,13 @@
 import { fromNodeHeaders } from "better-auth/node";
 import { usersService } from "./users.service.js";
 import { asAuthed } from "../../shared/types/express.jsdoc.js";
+import { HTTP_STATUS } from "../../shared/constants/http-status.js";
 import { stringParam } from "../../shared/lib/params.js";
 
-/** @param {import("express").Request} req */
+/**
+ * @param {import("express").Request} req
+ * @returns {string}
+ */
 function paramId(req) {
   return stringParam(req, "id");
 }
@@ -48,7 +52,9 @@ export const getAdminDetail = async (req, res, next) => {
 export const createUser = async (req, res, next) => {
   try {
     const headers = fromNodeHeaders(req.headers);
-    return res.status(201).json(await usersService.createUser(req.body, { headers }));
+    return res
+      .status(HTTP_STATUS.CREATED)
+      .json(await usersService.createUser(req.body, { headers }));
   } catch (err) {
     return next(err);
   }

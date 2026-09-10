@@ -3,19 +3,26 @@ import { AmenitiesRepository } from "./amenities.repository.js";
 import { toAmenityDto, toAdminAmenityDto } from "./amenities.mapper.js";
 import { AmenityInUseError } from "./amenities.errors.js";
 
+/** Business rules for the amenity catalog — public read, admin CRUD, cross-feature validation. */
 export class AmenitiesService {
   /** @param {{ amenitiesRepository?: AmenitiesRepository }} [deps] */
   constructor(deps = {}) {
     this.repo = deps.amenitiesRepository ?? new AmenitiesRepository();
   }
 
-  /** @param {{ category?: string }} query */
+  /**
+   * @param {{ category?: string }} query
+   * @returns {Promise<{ data: import("./amenities.types.js").AmenityDto[] }>}
+   */
   async listPublic(query) {
     const amenities = await this.repo.findActive(query);
     return { data: amenities.map(toAmenityDto) };
   }
 
-  /** @param {{ status?: string, category?: string, q?: string }} query */
+  /**
+   * @param {{ status?: string, category?: string, q?: string }} query
+   * @returns {Promise<{ data: import("./amenities.types.js").AdminAmenityDto[] }>}
+   */
   async listAdmin(query) {
     const amenities = await this.repo.findAllAdmin(query);
     return { data: amenities.map(toAdminAmenityDto) };
@@ -23,6 +30,7 @@ export class AmenitiesService {
 
   /**
    * @param {{ name: string, category?: string, icon?: string, status?: string }} data
+   * @returns {Promise<import("./amenities.types.js").AdminAmenityDto>}
    * @throws {ConflictError} `name` already exists
    */
   async create(data) {
@@ -36,6 +44,7 @@ export class AmenitiesService {
   /**
    * @param {string} id
    * @param {{ name?: string, category?: string, icon?: string, status?: string }} data
+   * @returns {Promise<import("./amenities.types.js").AdminAmenityDto>}
    * @throws {NotFoundError}
    * @throws {ConflictError} new `name` already exists
    */
@@ -55,6 +64,7 @@ export class AmenitiesService {
 
   /**
    * @param {string} id
+   * @returns {Promise<{ success: true }>}
    * @throws {NotFoundError}
    * @throws {AmenityInUseError} assigned to any location or workspace
    */
@@ -73,6 +83,7 @@ export class AmenitiesService {
    * Used by locations/workspaces when writing their `amenityIds` field —
    * "each must exist and be active" (locations.md §4, workspaces.md §5).
    * @param {string[] | undefined} amenityIds
+   * @returns {Promise<void>}
    * @throws {ValidationError} an id does not exist or is not active
    */
   async assertActiveAmenityIds(amenityIds) {

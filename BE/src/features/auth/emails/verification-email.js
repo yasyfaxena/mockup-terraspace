@@ -23,6 +23,7 @@ const BUTTON_STYLE = {
  * No JSX — this backend ships plain JavaScript with no build step
  * (be-architecture.md), so templates are built with `createElement` directly.
  * @param {{ name: string, url: string }} props
+ * @returns {import("react").ReactElement}
  */
 export function VerificationEmail({ name, url }) {
   return createElement(

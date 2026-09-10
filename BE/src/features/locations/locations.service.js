@@ -5,6 +5,9 @@ import { LocationsRepository } from "./locations.repository.js";
 import { toLocationListDto, toLocationDetailDto, toAdminLocationDto } from "./locations.mapper.js";
 import { slugify } from "./locations.slug.js";
 
+const LOCATION_NOT_FOUND_MESSAGE = "Location not found.";
+
+/** Business rules for the location catalog — public read, admin CRUD. */
 export class LocationsService {
   /**
    * @param {{
@@ -19,7 +22,10 @@ export class LocationsService {
     this.amenities = deps.amenitiesService ?? defaultAmenitiesService;
   }
 
-  /** @param {{ city?: string, q?: string, amenityId?: string[] }} query */
+  /**
+   * @param {{ city?: string, q?: string, amenityId?: string[] }} query
+   * @returns {Promise<{ data: import("./locations.types.js").LocationListItemDto[] }>}
+   */
   async listPublic(query) {
     const rows = await this.repo.findActivePublic({
       city: query.city,
@@ -43,16 +49,20 @@ export class LocationsService {
   /**
    * @param {string} slug
    * @throws {NotFoundError}
+   * @returns {Promise<object>}
    */
   async getBySlug(slug) {
     const location = await this.repo.findBySlugActive(slug);
-    if (!location) throw new NotFoundError("Location not found.");
+    if (!location) throw new NotFoundError(LOCATION_NOT_FOUND_MESSAGE);
 
     const settings = await this.settings.getSettings();
     return toLocationDetailDto(location, settings.currency);
   }
 
-  /** @param {{ status?: string, q?: string }} query */
+  /**
+   * @param {{ status?: string, q?: string }} query
+   * @returns {Promise<{ data: import("./locations.types.js").AdminLocationDto[] }>}
+   */
   async listAdmin(query) {
     const locations = await this.repo.findAllAdmin(query);
     return { data: locations.map(toAdminLocationDto) };
@@ -61,10 +71,11 @@ export class LocationsService {
   /**
    * @param {string} id
    * @throws {NotFoundError}
+   * @returns {Promise<import("./locations.types.js").AdminLocationDto>}
    */
   async getAdminDetail(id) {
     const location = await this.repo.findByIdAdmin(id);
-    if (!location) throw new NotFoundError("Location not found.");
+    if (!location) throw new NotFoundError(LOCATION_NOT_FOUND_MESSAGE);
     return toAdminLocationDto(location);
   }
 
@@ -72,6 +83,7 @@ export class LocationsService {
    * @param {Record<string, any>} data
    * @throws {ValidationError} slug reduces to empty
    * @throws {ConflictError} slug already exists
+   * @returns {Promise<import("./locations.types.js").AdminLocationDto>}
    */
   async create(data) {
     const slug = slugify(data.slug);
@@ -99,10 +111,11 @@ export class LocationsService {
    * @throws {NotFoundError}
    * @throws {ValidationError} slug reduces to empty
    * @throws {ConflictError} new slug already exists
+   * @returns {Promise<import("./locations.types.js").AdminLocationDto>}
    */
   async update(id, data) {
     const location = await this.repo.findById(id);
-    if (!location) throw new NotFoundError("Location not found.");
+    if (!location) throw new NotFoundError(LOCATION_NOT_FOUND_MESSAGE);
 
     /** @type {string | undefined} */
     let slug;
@@ -136,10 +149,11 @@ export class LocationsService {
    * @param {string} id
    * @throws {NotFoundError}
    * @throws {ConflictError} location still has workspaces
+   * @returns {Promise<{ success: true }>}
    */
   async remove(id) {
     const location = await this.repo.findById(id);
-    if (!location) throw new NotFoundError("Location not found.");
+    if (!location) throw new NotFoundError(LOCATION_NOT_FOUND_MESSAGE);
 
     const workspaceCount = await this.repo.countWorkspaces(id);
     if (workspaceCount > 0) throw new ConflictError("Location still has workspaces.");

@@ -1,10 +1,19 @@
-/** @param {unknown} value */
+const MONEY_DECIMAL_PLACES = 2;
+const ISO_DATE_LENGTH = 10;
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
 function toMoneyString(value) {
   if (value === null || value === undefined) return "0.00";
-  return Number(value).toFixed(2);
+  return Number(value).toFixed(MONEY_DECIMAL_PLACES);
 }
 
-/** @param {{ providerId: string, createdAt: Date }} account */
+/**
+ * @param {{ providerId: string, createdAt: Date }} account
+ * @returns {{ providerId: string, linkedAt: string }}
+ */
 function toAuthMethodDto(account) {
   return { providerId: account.providerId, linkedAt: account.createdAt.toISOString() };
 }
@@ -53,7 +62,9 @@ export function toAdminListItemDto(row) {
     totalBookings: row.totalBookings,
     totalSpent: toMoneyString(row.totalSpent),
     lastBookingDate: row.lastBookingDate
-      ? new Date(/** @type {string} */ (row.lastBookingDate)).toISOString().slice(0, 10)
+      ? new Date(/** @type {string} */ (row.lastBookingDate))
+          .toISOString()
+          .slice(0, ISO_DATE_LENGTH)
       : null,
     createdAt: new Date(/** @type {string} */ (row.createdAt)).toISOString(),
   };
@@ -83,7 +94,7 @@ export function toAdminDetailDto(user, { authMethods, activeSessions, recentBook
     totalBookings: stats.totalBookings,
     totalSpent: toMoneyString(stats.totalSpent),
     lastBookingDate: recentBookings[0]
-      ? recentBookings[0].bookingDate.toISOString().slice(0, 10)
+      ? recentBookings[0].bookingDate.toISOString().slice(0, ISO_DATE_LENGTH)
       : null,
     createdAt: user.createdAt.toISOString(),
     banReason: user.banReason,
@@ -94,7 +105,7 @@ export function toAdminDetailDto(user, { authMethods, activeSessions, recentBook
     recentBookings: recentBookings.map((booking) => ({
       id: booking.id,
       reference: booking.reference,
-      bookingDate: booking.bookingDate.toISOString().slice(0, 10),
+      bookingDate: booking.bookingDate.toISOString().slice(0, ISO_DATE_LENGTH),
       status: booking.status,
       totalAmount: toMoneyString(booking.totalAmount),
       workspaceName: booking.workspace.name,
