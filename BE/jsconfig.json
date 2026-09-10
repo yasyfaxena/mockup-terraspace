@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ESNext",
+    "checkJs": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "#shared/*": ["./src/shared/*"],
+      "#features/*": ["./src/features/*"]
+    }
+  },
+  "include": ["src/**/*.js"],
+  "exclude": ["node_modules"]
+}
