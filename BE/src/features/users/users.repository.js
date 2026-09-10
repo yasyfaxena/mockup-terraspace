@@ -167,9 +167,4 @@ export class UsersRepository {
   verifyEmail(id) {
     return this.db.user.update({ where: { id }, data: { emailVerified: true } });
   }
-
-  async getPlatformCurrency() {
-    const settings = await this.db.adminSettings.findUnique({ where: { id: true } });
-    return settings?.currency ?? "IDR";
-  }
 }

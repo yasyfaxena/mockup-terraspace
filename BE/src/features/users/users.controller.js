@@ -1,10 +1,11 @@
 import { fromNodeHeaders } from "better-auth/node";
 import { usersService } from "./users.service.js";
 import { asAuthed } from "../../shared/types/express.jsdoc.js";
+import { stringParam } from "../../shared/lib/params.js";
 
 /** @param {import("express").Request} req */
 function paramId(req) {
-  return String(req.params.id);
+  return stringParam(req, "id");
 }
 
 /** @type {import("express").RequestHandler} */

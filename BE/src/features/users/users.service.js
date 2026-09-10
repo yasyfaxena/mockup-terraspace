@@ -1,9 +1,10 @@
 import { createElement } from "react";
 import { render } from "@react-email/render";
 import { auth as authInstance } from "../auth/index.js";
+import { settingsService as defaultSettingsService } from "../settings/index.js";
 import { NotFoundError } from "../../shared/errors/http-errors.js";
 import { sendEmail } from "../../shared/lib/mailer.js";
-import { toPaginationMeta } from "../../shared/types/pagination.js";
+import { toPaginationMeta } from "../../shared/lib/pagination.js";
 import { UsersRepository } from "./users.repository.js";
 import { toMeDto, toAdminListItemDto, toAdminDetailDto, toBanDto } from "./users.mapper.js";
 import { EmailAlreadyExistsError, LastAdminError, UserHasBookingsError } from "./users.errors.js";
@@ -12,10 +13,17 @@ import { WelcomeEmail } from "./welcome-email.js";
 const RECENT_BOOKINGS_LIMIT = 10;
 
 export class UsersService {
-  /** @param {{ usersRepository?: UsersRepository, auth?: typeof authInstance }} [deps] */
+  /**
+   * @param {{
+   *   usersRepository?: UsersRepository,
+   *   auth?: typeof authInstance,
+   *   settingsService?: typeof defaultSettingsService,
+   * }} [deps]
+   */
   constructor(deps = {}) {
     this.repo = deps.usersRepository ?? new UsersRepository();
     this.auth = deps.auth ?? authInstance;
+    this.settings = deps.settingsService ?? defaultSettingsService;
   }
 
   /**
@@ -23,14 +31,14 @@ export class UsersService {
    * @throws {NotFoundError}
    */
   async getMe(userId) {
-    const [user, stats, authMethods, currency] = await Promise.all([
+    const [user, stats, authMethods, settings] = await Promise.all([
       this.repo.findById(userId),
       this.repo.getBookingStats(userId),
       this.repo.findAuthMethods(userId),
-      this.repo.getPlatformCurrency(),
+      this.settings.getSettings(),
     ]);
     if (!user) throw new NotFoundError("User not found.");
-    return toMeDto(user, { stats, authMethods, currency });
+    return toMeDto(user, { stats, authMethods, currency: settings.currency });
   }
 
   /**

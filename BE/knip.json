@@ -13,8 +13,6 @@
     "@scalar/express-api-reference",
     "@sentry/node",
     "awilix",
-    "date-fns",
-    "date-fns-tz",
     "express-rate-limit",
     "node-cron",
     "zod-openapi",
