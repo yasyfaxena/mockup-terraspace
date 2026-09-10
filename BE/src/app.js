@@ -9,6 +9,7 @@ import { notFoundHandler } from "./shared/middleware/not-found.js";
 import { errorHandler } from "./shared/middleware/error-handler.js";
 import { apiRouter } from "./shared/router.js";
 import { healthRouter } from "./shared/routes/health.route.js";
+import { mountAuthHandler } from "./features/auth/index.js";
 
 const app = express();
 
@@ -30,9 +31,10 @@ app.use(
   }),
 );
 
+// ── Better Auth — BEFORE express.json() (libraries.md §2) ───
+mountAuthHandler(app);
+
 // ── Body parsing ────────────────────────────────────────────
-// NOTE: Better Auth handler goes BEFORE express.json() in Phase 2.
-// app.all("/api/auth/*", authHandler);
 app.use(express.json());
 
 // ── Routes ──────────────────────────────────────────────────

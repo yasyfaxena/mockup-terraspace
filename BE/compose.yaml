@@ -21,5 +21,11 @@ services:
       retries: 10
       start_period: 10s
 
+  # docker compose --profile tools up -d
+  mailpit:
+    image: axllent/mailpit:latest
+    profiles: [tools]
+    ports: ["8025:8025", "1025:1025"]
+
 volumes:
   pgdata:

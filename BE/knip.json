@@ -2,16 +2,10 @@
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "entry": ["src/server.js"],
   "project": ["src/**/*.js"],
-  "ignore": [
-    "src/shared/container.js",
-    "src/shared/middleware/validate.js",
-    "src/shared/errors/**",
-    "src/features/auth/auth.config.js"
-  ],
+  "ignore": ["src/shared/container.js", "src/shared/errors/**"],
   "ignoreExportsUsedInFile": true,
   "ignoreDependencies": [
     "pino-pretty",
-    "@react-email/components",
     "react-email",
     "@better-auth/cli",
     "lint-staged",
@@ -23,10 +17,13 @@
     "date-fns-tz",
     "express-rate-limit",
     "node-cron",
-    "resend",
     "zod-openapi",
     "eslint-plugin-boundaries",
     "eslint-plugin-import",
-    "nock"
-  ]
+    "nock",
+    "@types/html-to-text"
+  ],
+  "rules": {
+    "exports": "warn"
+  }
 }
