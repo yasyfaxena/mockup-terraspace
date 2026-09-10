@@ -169,7 +169,7 @@ Same query parameters as endpoint 1, plus `status`-agnostic behaviour and `q` (s
 }
 ```
 
-`activeBookingCount` (non-cancelled) lets the console disable the delete button before the request is rejected.
+`activeBookingCount` (non-cancelled) lets the console disable the delete button before the request is rejected. Note it's not a full safety check by itself: it can read `0` for a workspace that still has only cancelled bookings, and delete will still 409 for that workspace (see §7) — the console should treat any booking history, not just `activeBookingCount > 0`, as reason to prefer "disable" over "delete".
 
 ---
 
