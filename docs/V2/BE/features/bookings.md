@@ -28,8 +28,7 @@ Create a booking. **Access:** Customer.
   "workspaceId": "8f14e45f-ceea-467a-9c4b-2d3a1b9e7c11",
   "bookingDate": "2026-09-15",
   "startTime": "09:00",
-  "endTime": "12:00",
-  "paymentMethod": "card"
+  "endTime": "12:00"
 }
 ```
 
@@ -39,9 +38,10 @@ Create a booking. **Access:** Customer.
 | `bookingDate` | `YYYY-MM-DD` | ✔ | Not in the past; within `advanceBookingDays` |
 | `startTime` | `HH:mm` | ✔ | |
 | `endTime` | `HH:mm` | ✔ | `> startTime`; gap ≥ 30 min; no midnight crossing |
-| `paymentMethod` | enum | ✔ | `card` · `ewallet` · `bank` |
 
 > **No amount field.** The current `createBooking` accepts `total` from the client and writes it unchecked — a crafted request books anything for `0`. In V2 the server computes the amount from `workspaces.pricePerHour` and `adminSettings.taxPercent`, and the client cannot influence it. Show the quote from `GET /workspaces/:id` before submitting; the response below is authoritative.
+
+> **No `paymentMethod` field either.** `bookings.payment_method` was removed from the schema (erd-spec.md §13, [`payments.md`](./payments.md) §2) — the flat `card`/`ewallet`/`bank` enum can't express PayBridge's real method codes. There is nothing on `bookings` to write it to until Phase 6's payments feature exists; method selection happens when the client later calls `POST /bookings/:id/payments`. `paymentStatus` is likewise **not settable here** — it stays `pending` until the payments service writes it.
 
 ### Response `201`
 
@@ -60,7 +60,6 @@ Create a booking. **Access:** Customer.
   "taxAmount": "16500.00",
   "totalAmount": "166500.00",
   "currency": "IDR",
-  "paymentMethod": "card",
   "paymentStatus": "pending",
   "workspace": {
     "id": "8f14e45f-ceea-467a-9c4b-2d3a1b9e7c11",
@@ -237,7 +236,6 @@ No request body.
       "reference": "TS-8F3K2A",
       "status": "confirmed",
       "paymentStatus": "paid",
-      "paymentMethod": "card",
       "bookingDate": "2026-09-15",
       "startTime": "09:00",
       "endTime": "12:00",
@@ -264,7 +262,7 @@ No request body.
 ```json
 {
   "id": "3fa85f64-…", "reference": "TS-8F3K2A", "accessCode": "TS-8F3K2A-4XQ9",
-  "status": "confirmed", "paymentStatus": "paid", "paymentMethod": "card",
+  "status": "confirmed", "paymentStatus": "paid",
   "bookingDate": "2026-09-15", "startTime": "09:00", "endTime": "12:00",
   "durationHours": "3.00", "unitPrice": "50000.00", "subtotalAmount": "150000.00",
   "taxAmount": "16500.00", "totalAmount": "166500.00", "currency": "IDR",
@@ -292,8 +290,6 @@ Staff booking on a customer's behalf (walk-in, phone). **Access:** Staff.
   "bookingDate": "2026-09-15",
   "startTime": "09:00",
   "endTime": "12:00",
-  "paymentMethod": "bank",
-  "paymentStatus": "paid",
   "status": "confirmed"
 }
 ```
@@ -304,11 +300,9 @@ Staff booking on a customer's behalf (walk-in, phone). **Access:** Staff.
 | `workspaceId` | UUID | ✔ | — |
 | `bookingDate` | `YYYY-MM-DD` | ✔ | — |
 | `startTime` / `endTime` | `HH:mm` | ✔ | — |
-| `paymentMethod` | enum | ✖ | `card` |
-| `paymentStatus` | enum | ✖ | `pending` |
-| `status` | enum | ✖ | `confirmed` |
+| `status` | enum | ✖ | `confirmed` — `pending` or `confirmed` only |
 
-Same `201` shape as endpoint 1.
+Same `201` shape as endpoint 1 — no `paymentMethod` field, same reasoning as endpoint 1. `paymentStatus` is not accepted here either: it stays `pending`, exactly as a walk-in booked by a customer would, until Phase 6's payments service marks it paid (including for a cash payment taken at the desk — that path is still to be designed there).
 
 ### Rules
 
@@ -323,15 +317,13 @@ Same `201` shape as endpoint 1.
 **Access:** Staff. All fields optional; only what is sent changes.
 
 ```json
-{ "status": "completed", "paymentStatus": "paid", "bookingDate": "2026-09-16",
-  "startTime": "10:00", "endTime": "13:00", "paymentMethod": "bank" }
+{ "status": "completed", "bookingDate": "2026-09-16",
+  "startTime": "10:00", "endTime": "13:00" }
 ```
 
 | Field | Type | Notes |
 |---|---|---|
 | `status` | enum | Setting `cancelled` also sets `cancelledAt` |
-| `paymentStatus` | enum | |
-| `paymentMethod` | enum | |
 | `bookingDate` | `YYYY-MM-DD` | Re-checks overlap |
 | `startTime` / `endTime` | `HH:mm` | Re-checks overlap; **recomputes** duration and amounts |
 | `workspaceId` | UUID | Move to another workspace; re-prices at that workspace's **current** rate |
@@ -343,7 +335,7 @@ Same `201` shape as endpoint 1.
 | 409 | `BOOKING_SLOT_TAKEN` | New time overlaps another booking |
 | 422 | `BOOKING_MIN_DURATION` | New range under 30 minutes |
 
-> **Changing time or workspace re-prices the booking.** The current `adminUpdateBooking` lets staff edit `startTime`, `endTime` and `totalAmount` independently, so times and money silently diverge. In V2 amounts are always derived; `totalAmount` is not a writable field.
+> **Changing time or workspace re-prices the booking.** The current `adminUpdateBooking` lets staff edit `startTime`, `endTime` and `totalAmount` independently, so times and money silently diverge. In V2 amounts are always derived; `totalAmount` is not a writable field. Neither are `paymentMethod` (removed from the schema, see endpoint 1) or `paymentStatus` (payments-service-only, see endpoint 7).
 
 ---
 

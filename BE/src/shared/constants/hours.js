@@ -18,3 +18,6 @@ export function openingHoursFor(location) {
 
 /** Minimum booking duration — erd-spec.md §13's `end_time - start_time >= 30 minutes` CHECK. */
 export const MINIMUM_BOOKING_MINUTES = 30;
+
+/** Early-arrival buffer before `startTime` for the door-access window (bookings.md §3). */
+export const ACCESS_BUFFER_MINUTES = 30;
