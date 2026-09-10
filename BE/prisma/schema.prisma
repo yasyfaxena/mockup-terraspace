@@ -7,4 +7,423 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Models will be added in Phase 1 after running @better-auth/cli generate
+// ─────────────────────────────────────────────────────────────
+// Enums — erd-spec.md §3, payments.md §2
+// ─────────────────────────────────────────────────────────────
+
+enum UserRole {
+  customer
+  staff
+  admin
+
+  @@map("user_role")
+}
+
+enum LocationStatus {
+  active
+  inactive
+
+  @@map("location_status")
+}
+
+enum AmenityStatus {
+  active
+  inactive
+
+  @@map("amenity_status")
+}
+
+enum WorkspaceType {
+  hot_desk
+  dedicated_desk
+  private_office
+  meeting_room
+  event_space
+
+  @@map("workspace_type")
+}
+
+enum WorkspaceAvailability {
+  available
+  limited
+  full
+  maintenance
+  disabled
+
+  @@map("workspace_availability")
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+
+  @@map("booking_status")
+}
+
+/// Mirrors the active payment's state on `bookings.payment_status` — written
+/// only by the payments service. Not to be confused with `PaymentState`,
+/// which is the richer state machine on `payments.status` itself.
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  refunded
+
+  @@map("payment_status")
+}
+
+enum PaymentProvider {
+  xendit
+  midtrans
+
+  @@map("payment_provider")
+}
+
+enum PaymentState {
+  pending
+  awaiting_payment
+  paid
+  failed
+  expired
+  refunded
+  partially_refunded
+
+  @@map("payment_state")
+}
+
+enum RefundState {
+  pending
+  succeeded
+  failed
+
+  @@map("refund_state")
+}
+
+enum WebhookState {
+  received
+  processed
+  ignored
+  failed
+
+  @@map("webhook_state")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Identity — Better Auth (erd-spec.md §4–7)
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false) @map("email_verified")
+  image         String?
+  role          UserRole  @default(customer)
+  banned        Boolean   @default(false)
+  banReason     String?   @map("ban_reason")
+  banExpires    DateTime? @map("ban_expires") @db.Timestamptz(6)
+  phone         String?   @db.VarChar(30)
+  company       String?   @db.VarChar(150)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  sessions Session[]
+  accounts Account[]
+  bookings Booking[]
+  refunds  Refund[]
+
+  @@unique([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Session {
+  id             String   @id
+  userId         String   @map("user_id")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  token          String
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz(6)
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent")
+  impersonatedBy String?  @map("impersonated_by")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id
+  userId                String    @map("user_id")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  password              String?
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at") @db.Timestamptz(6)
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at") @db.Timestamptz(6)
+  scope                 String?
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([identifier])
+  @@index([expiresAt])
+  @@map("verifications")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Catalog — erd-spec.md §8–12
+// ─────────────────────────────────────────────────────────────
+
+model Location {
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug               String         @unique @db.VarChar(100)
+  name               String         @db.VarChar(150)
+  address            String
+  city               String         @db.VarChar(100)
+  imageUrl           String?        @map("image_url")
+  openingHours       String         @default("Mon–Sun 09:00–22:00") @map("opening_hours")
+  access247          Boolean        @default(false) @map("access_24_7")
+  description        String         @default("")
+  latitude           Decimal?       @db.Decimal(9, 6)
+  longitude          Decimal?       @db.Decimal(9, 6)
+  accessRadiusMeters Int            @default(50) @map("access_radius_meters")
+  /// IANA zone, e.g. Asia/Jakarta — see erd-spec.md §8 for why this is a column, not a constant.
+  timezone           String         @default("Asia/Jakarta") @db.VarChar(64)
+  status             LocationStatus @default(active)
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspaces        Workspace[]
+  locationAmenities LocationAmenity[]
+
+  @@index([city, status])
+  @@map("locations")
+}
+
+model Workspace {
+  id                   String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  locationId           String                @map("location_id") @db.Uuid
+  location             Location              @relation(fields: [locationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  name                 String                @db.VarChar(150)
+  type                 WorkspaceType
+  floor                String                @default("") @db.VarChar(50)
+  pricePerHour         Decimal               @default(0) @map("price_per_hour") @db.Decimal(12, 2)
+  availability         WorkspaceAvailability @default(available)
+  simpleBooking        Boolean               @default(false) @map("simple_booking")
+  imageUrl             String?               @map("image_url")
+  description          String                @default("")
+  cancellationPolicy   String                @default("") @map("cancellation_policy")
+  calendarSyncProvider String?               @map("calendar_sync_provider") @db.VarChar(50)
+  qrProvider           String?               @map("qr_provider") @db.VarChar(50)
+  createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspaceAmenities WorkspaceAmenity[]
+  bookings           Booking[]
+
+  @@index([locationId, availability])
+  @@index([type, availability])
+  @@map("workspaces")
+}
+
+model Amenity {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String        @unique @db.VarChar(100)
+  nameId    String?       @map("name_id") @db.VarChar(100)
+  category  String        @default("General") @db.VarChar(50)
+  icon      String        @default("tag") @db.VarChar(50)
+  status    AmenityStatus @default(active)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspaceAmenities WorkspaceAmenity[]
+  locationAmenities  LocationAmenity[]
+
+  @@index([category, status])
+  @@map("amenities")
+}
+
+model WorkspaceAmenity {
+  workspaceId String    @map("workspace_id") @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  amenityId   String    @map("amenity_id") @db.Uuid
+  amenity     Amenity   @relation(fields: [amenityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@id([workspaceId, amenityId])
+  @@index([amenityId, workspaceId])
+  @@map("workspace_amenities")
+}
+
+model LocationAmenity {
+  locationId String   @map("location_id") @db.Uuid
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  amenityId  String   @map("amenity_id") @db.Uuid
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@id([locationId, amenityId])
+  @@index([amenityId, locationId])
+  @@map("location_amenities")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Bookings — erd-spec.md §13
+//
+// Not modelled here (added by hand to the migration SQL — see
+// development-phases.md Phase 1 and erd-spec.md §13):
+//   - the generated `booking_period` tsrange column
+//   - the `bookings_no_overlap` GiST exclusion constraint
+//   - every CHECK constraint
+// Prisma has no schema-language support for any of the three.
+// ─────────────────────────────────────────────────────────────
+
+model Booking {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String        @map("user_id")
+  user           User          @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  workspaceId    String        @map("workspace_id") @db.Uuid
+  workspace      Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  bookingDate    DateTime      @map("booking_date") @db.Date
+  startTime      DateTime      @map("start_time") @db.Time(0)
+  endTime        DateTime      @map("end_time") @db.Time(0)
+  /// Price snapshot — repricing a workspace never alters an existing booking.
+  unitPrice      Decimal       @default(0) @map("unit_price") @db.Decimal(12, 2)
+  durationHours  Decimal       @default(0) @map("duration_hours") @db.Decimal(6, 2)
+  subtotalAmount Decimal       @default(0) @map("subtotal_amount") @db.Decimal(14, 2)
+  taxAmount      Decimal       @default(0) @map("tax_amount") @db.Decimal(14, 2)
+  totalAmount    Decimal       @default(0) @map("total_amount") @db.Decimal(14, 2)
+  /// Currency snapshot.
+  currency       String        @default("IDR") @db.Char(3)
+  /// Derived — mirrors the active payment's state. Written only by the payments service.
+  paymentStatus  PaymentStatus @default(pending) @map("payment_status")
+  status         BookingStatus @default(pending)
+  reference      String        @unique @db.VarChar(50)
+  accessCode     String        @unique @map("access_code") @db.VarChar(255)
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  cancelledAt    DateTime?     @map("cancelled_at") @db.Timestamptz(6)
+
+  payments Payment[]
+
+  @@index([userId, bookingDate(sort: Desc)])
+  @@index([workspaceId, bookingDate])
+  @@index([status, bookingDate])
+  @@index([paymentStatus, createdAt(sort: Desc)])
+  @@map("bookings")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Configuration — erd-spec.md §14
+// ─────────────────────────────────────────────────────────────
+
+model AdminSettings {
+  /// Singleton row — always `true`. Enforced again by a CHECK in the migration.
+  id                        Boolean  @id @default(true)
+  companyName               String   @default("TerraSpace") @map("company_name") @db.VarChar(150)
+  supportEmail              String?  @map("support_email") @db.VarChar(255)
+  currency                  String   @default("IDR") @db.Char(3)
+  taxPercent                Decimal  @default(0) @map("tax_percent") @db.Decimal(5, 2)
+  cancellationWindowHours   Int      @default(24) @map("cancellation_window_hours")
+  advanceBookingDays        Int      @default(30) @map("advance_booking_days")
+  emailNotificationsEnabled Boolean  @default(true) @map("email_notifications_enabled")
+  updatedAt                 DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("admin_settings")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Payments — payments.md §2
+//
+// Not modelled here (added by hand to the migration SQL):
+//   - the `payments_one_paid_per_booking` partial unique index
+//   - the `amount_minor > 0` CHECK constraints
+// ─────────────────────────────────────────────────────────────
+
+model Payment {
+  id                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bookingId             String          @map("booking_id") @db.Uuid
+  booking               Booking         @relation(fields: [bookingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  provider              PaymentProvider
+  paybridgeChargeId     String          @unique @map("paybridge_charge_id")
+  paybridgeOrderId      String          @unique @map("paybridge_order_id")
+  /// Exactly what we sent to PayBridge — see shared/lib/money.js.
+  amountMinor           BigInt          @map("amount_minor")
+  currency              String          @db.Char(3)
+  status                PaymentState    @default(pending)
+  checkoutUrl           String?         @map("checkout_url")
+  paymentMethodCode     String?         @map("payment_method_code")
+  paymentMethodCategory String?         @map("payment_method_category")
+  providerChargeId      String?         @map("provider_charge_id")
+  paidAt                DateTime?       @map("paid_at") @db.Timestamptz(6)
+  failedAt              DateTime?       @map("failed_at") @db.Timestamptz(6)
+  expiredAt             DateTime?       @map("expired_at") @db.Timestamptz(6)
+  createdAt             DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  events  PaymentEvent[]
+  refunds Refund[]
+
+  @@index([bookingId, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("payments")
+}
+
+/// The webhook inbox — idempotency and audit trail. See payments.md §2, §7.
+model PaymentEvent {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  paymentId        String?      @map("payment_id") @db.Uuid
+  payment          Payment?     @relation(fields: [paymentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  paybridgeOrderId String       @map("paybridge_order_id")
+  event            String
+  /// `x-nonce` header — replay protection.
+  nonce            String       @unique
+  /// `x-key-id`, for key-rotation audit.
+  keyId            String       @map("key_id")
+  signature        String
+  /// Exact bytes as received — lets a signature dispute be re-verified later.
+  rawBody          String       @map("raw_body")
+  status           WebhookState @default(received)
+  error            String?
+  receivedAt       DateTime     @default(now()) @map("received_at") @db.Timestamptz(6)
+  processedAt      DateTime?    @map("processed_at") @db.Timestamptz(6)
+
+  @@unique([paybridgeOrderId, event])
+  @@index([status, receivedAt])
+  @@map("payment_events")
+}
+
+model Refund {
+  id                String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  paymentId         String      @map("payment_id") @db.Uuid
+  payment           Payment     @relation(fields: [paymentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  paybridgeRefundId String      @unique @map("paybridge_refund_id")
+  amountMinor       BigInt      @map("amount_minor")
+  reason            String?     @db.VarChar(500)
+  status            RefundState
+  requestedBy       String      @map("requested_by")
+  requestedByUser   User        @relation(fields: [requestedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  createdAt         DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([paymentId])
+  @@map("refunds")
+}

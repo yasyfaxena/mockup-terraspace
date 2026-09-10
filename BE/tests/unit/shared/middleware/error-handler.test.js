@@ -2,10 +2,14 @@ import { describe, it, expect } from "vitest";
 import request from "supertest";
 import { Router } from "express";
 import express from "express";
-import { app } from "../src/app.js";
-import { apiRouter } from "../src/shared/router.js";
-import { errorHandler } from "../src/shared/middleware/error-handler.js";
-import { NotFoundError, ValidationError, ForbiddenError } from "../src/shared/errors/index.js";
+import { app } from "../../../../src/app.js";
+import { apiRouter } from "../../../../src/shared/router.js";
+import { errorHandler } from "../../../../src/shared/middleware/error-handler.js";
+import {
+  NotFoundError,
+  ValidationError,
+  ForbiddenError,
+} from "../../../../src/shared/errors/index.js";
 
 describe("error envelope (§3)", () => {
   it("an unmatched route falls through to the 404 handler with the envelope shape", async () => {

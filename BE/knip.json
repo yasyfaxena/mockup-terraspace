@@ -5,7 +5,8 @@
   "ignore": [
     "src/shared/container.js",
     "src/shared/middleware/validate.js",
-    "src/shared/errors/**"
+    "src/shared/errors/**",
+    "src/features/auth/auth.config.js"
   ],
   "ignoreExportsUsedInFile": true,
   "ignoreDependencies": [
@@ -18,15 +19,12 @@
     "@scalar/express-api-reference",
     "@sentry/node",
     "awilix",
-    "better-auth",
     "date-fns",
     "date-fns-tz",
     "express-rate-limit",
-    "nanoid",
     "node-cron",
     "resend",
     "zod-openapi",
-    "@faker-js/faker",
     "eslint-plugin-boundaries",
     "eslint-plugin-import",
     "nock"

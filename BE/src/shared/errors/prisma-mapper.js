@@ -1,6 +1,28 @@
 import { ConflictError, InternalError, NotFoundError, ValidationError } from "./http-errors.js";
 
 /**
+ * Extracts a raw PostgreSQL SQLSTATE from a Prisma error, however Prisma
+ * chose to surface it. A `PrismaClientKnownRequestError` carries it as
+ * `meta.code` (e.g. a raw query's P2010). A `PrismaClientUnknownRequestError`
+ * — what a structured call like `.create()` throws for a constraint Prisma
+ * has no dedicated mapping for, such as our hand-written CHECKs and the
+ * `bookings_no_overlap` EXCLUDE constraint — has no `.code`/`.meta` at all;
+ * the SQLSTATE only appears embedded in its formatted `.message`.
+ * @param {unknown} err
+ * @returns {string | null}
+ */
+function extractSqlState(err) {
+  if (!err || typeof err !== "object") return null;
+  const e = /** @type {{ meta?: { code?: unknown }, message?: unknown }} */ (err);
+  if (typeof e.meta?.code === "string") return e.meta.code;
+  if (typeof e.message === "string") {
+    const match = e.message.match(/code:\s*"([0-9A-Z]{5})"/);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+/**
  * Maps a Prisma error to an AppError.
  * @param {unknown} err
  * @returns {import("./app-error.js").AppError | null} null when unrecognized — the handler wraps it
@@ -25,6 +47,17 @@ export function mapPrismaError(err) {
     return new InternalError("Invalid database query.", { cause: err });
   }
 
+  // Raw PostgreSQL codes for constraints Prisma has no dedicated mapping
+  // for — e.g. the hand-written `payments_one_paid_per_booking` partial
+  // unique index (error-handling.md §8).
+  switch (extractSqlState(err)) {
+    case "23505":
+    case "23503":
+      return new ConflictError("A record with these values already exists.");
+    case "23514":
+      return new ValidationError("The request violates a data rule.");
+  }
+
   return null; // unrecognized → InternalError in the handler
 }
 
@@ -35,11 +68,5 @@ export function mapPrismaError(err) {
  * @returns {boolean}
  */
 export function isExclusionViolation(err) {
-  if (!err || typeof err !== "object") return false;
-  const e = /** @type {{ code?: unknown, meta?: { code?: unknown } }} */ (err);
-  // Prisma wraps raw PG errors as P2010 with meta.code
-  if (e.code === "P2010" && e.meta?.code === "23P01") return true;
-  // Direct PG error from $queryRaw
-  if (e.code === "23P01") return true;
-  return false;
+  return extractSqlState(err) === "23P01";
 }

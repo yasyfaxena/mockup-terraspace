@@ -1,0 +1,7 @@
+{
+  "name": "events-shim",
+  "version": "1.0.0",
+  "description": "Forwards the userland 'events' package (pulled in transitively by testcontainers/archiver) to Node's own core module, so it never shadows @types/node's ambient declaration during type-checking.",
+  "main": "index.js",
+  "types": "index.d.ts"
+}

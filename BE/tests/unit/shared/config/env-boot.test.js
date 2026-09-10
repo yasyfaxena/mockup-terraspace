@@ -4,7 +4,9 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const envModule = pathToFileURL(path.resolve(__dirname, "../src/shared/config/env.js")).href;
+const envModule = pathToFileURL(
+  path.resolve(__dirname, "../../../../src/shared/config/env.js"),
+).href;
 
 /**
  * Boots a throwaway Node process that only imports env.js, with a chosen
