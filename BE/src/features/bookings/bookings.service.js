@@ -161,6 +161,11 @@ export class BookingsService {
   }
 
   /**
+   * Starts `pending` — the slot is held (the exclusion constraint blocks
+   * both `pending` and `confirmed`) but the booking only becomes
+   * `confirmed` once the payments service processes a `payment_succeeded`
+   * webhook (payments.md §7). A booking that never gets paid is cleaned
+   * up by the stale-pending sweep or a `payment_expired` webhook.
    * @param {string} userId
    * @param {{ workspaceId: string, bookingDate: string, startTime: string, endTime: string }} data
    * @returns {Promise<import("./bookings.types.js").BookingDetailDto>}
@@ -169,7 +174,7 @@ export class BookingsService {
     const booking = await this.#createBooking({
       ...data,
       userId,
-      status: "confirmed",
+      status: "pending",
       waiveDateChecks: false,
     });
     const settings = await this.settings.getSettings();
@@ -386,6 +391,53 @@ export class BookingsService {
   async calendar(query) {
     const rows = await this.repo.findCalendar(query);
     return { data: rows.map(toCalendarEntryDto) };
+  }
+
+  /**
+   * Ownership-checked raw row (workspace, location, and customer contact
+   * details) — for the payments feature to build a PayBridge charge
+   * payload (payments.md §6), reached only via bookings/index.js.
+   * @param {string} userId
+   * @param {string} id
+   * @throws {NotFoundError} not found, or belongs to another user
+   * @returns {Promise<any>}
+   */
+  async getOwnedById(userId, id) {
+    const booking = await this.repo.findByIdWithBillingDetails(id);
+    if (!booking || booking.userId !== userId) throw new NotFoundError(BOOKING_NOT_FOUND_MESSAGE);
+    return booking;
+  }
+
+  /**
+   * Written only by the payments service (erd-spec.md §13) once a
+   * `payment_succeeded` webhook is processed.
+   * @param {string} id
+   * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   * @returns {Promise<void>}
+   */
+  async confirmFromPayment(id, client) {
+    await this.repo.update(id, { status: "confirmed", paymentStatus: "paid" }, client);
+  }
+
+  /**
+   * @param {string} id
+   * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   * @returns {Promise<void>}
+   */
+  async setPaymentFailed(id, client) {
+    await this.repo.update(id, { paymentStatus: "failed" }, client);
+  }
+
+  /**
+   * `payment_expired` — releases the slot (payments.md §7). `paymentStatus`
+   * has no `expired` member, so it is left untouched; `status = cancelled`
+   * already conveys the outcome.
+   * @param {string} id
+   * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   * @returns {Promise<void>}
+   */
+  async cancelFromPaymentExpiry(id, client) {
+    await this.repo.update(id, { status: "cancelled", cancelledAt: new Date() }, client);
   }
 }
 

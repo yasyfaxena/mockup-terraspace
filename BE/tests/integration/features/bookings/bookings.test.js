@@ -40,7 +40,7 @@ describe("POST /bookings (bookings.md §1)", () => {
     expect(res.body.subtotalAmount).toBe("150000.00");
     expect(res.body.taxAmount).toBe("16500.00");
     expect(res.body.totalAmount).toBe("166500.00");
-    expect(res.body.status).toBe("confirmed");
+    expect(res.body.status).toBe("pending");
     expect(res.body.paymentStatus).toBe("pending");
     expect(res.body.reference).toMatch(/^TS-[A-Z0-9]{6}$/);
     expect(res.body.accessCode).toMatch(/^TS-[A-Z0-9]{6}-[A-Z0-9]{4}$/);

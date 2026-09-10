@@ -295,6 +295,8 @@ No amount — it is read from the booking. The client cannot influence what is c
 
 Redirect the customer to `checkoutUrl`.
 
+> `expiresAt` is **not** returned by PayBridge's `POST /charges` — the real response is just `{ id, orderId, provider, amount, currency, status, checkoutUrl, createdAt }`. We compute it ourselves as `payment.createdAt + 30 min`, matching the stale-pending sweep threshold in §12, so the client has something to show a countdown against.
+
 ### What the service sends to PayBridge
 
 ```json

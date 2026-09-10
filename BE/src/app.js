@@ -10,6 +10,7 @@ import { errorHandler } from "./shared/middleware/error-handler.js";
 import { apiRouter } from "./shared/router.js";
 import { healthRouter } from "./shared/routes/health.route.js";
 import { mountAuthHandler } from "./features/auth/index.js";
+import { mountPaymentsWebhook } from "./features/payments/index.js";
 
 const app = express();
 
@@ -33,6 +34,10 @@ app.use(
 
 // ── Better Auth — BEFORE express.json() (libraries.md §2) ───
 mountAuthHandler(app);
+
+// ── PayBridge webhook — BEFORE express.json(), raw body only ─
+// (payments.md §7 — the second place middleware order is load-bearing)
+mountPaymentsWebhook(app);
 
 // ── Body parsing ────────────────────────────────────────────
 app.use(express.json());

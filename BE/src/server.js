@@ -2,6 +2,7 @@ import { app } from "./app.js";
 import { env } from "./shared/config/env.js";
 import { logger } from "./shared/lib/logger.js";
 import { prisma } from "./shared/database/client.js";
+import { startJobs } from "./jobs/index.js";
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -9,6 +10,8 @@ const SHUTDOWN_TIMEOUT_MS = 10_000;
 const server = app.listen(env.PORT, () => {
   logger.info({ port: env.PORT, env: env.NODE_ENV }, "Server started");
 });
+
+startJobs();
 
 // ── Graceful shutdown ───────────────────────────────────────
 async function shutdown(code = 0) {

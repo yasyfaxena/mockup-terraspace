@@ -50,7 +50,7 @@ Create a booking. **Access:** Customer.
   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "reference": "TS-8F3K2A",
   "accessCode": "TS-8F3K2A-4XQ9",
-  "status": "confirmed",
+  "status": "pending",
   "bookingDate": "2026-09-15",
   "startTime": "09:00",
   "endTime": "12:00",
@@ -90,6 +90,7 @@ Create a booking. **Access:** Customer.
 2. `unitPrice` and `currency` are **snapshots**. Later catalog or currency changes never alter this row.
 3. `BOOKING_SLOT_TAKEN` comes from the database, not the pre-check — the exclusion constraint is the authority (ERD §13, [`error-handling.md`](../error-handling.md) §8).
 4. `reference` and `accessCode` are server-generated and unique.
+5. **`status` starts `pending`, not `confirmed`.** The slot is held either way — the exclusion constraint blocks on `status IN ('pending','confirmed')` — but the booking only becomes `confirmed` once [`payments`](./payments.md) processes a `payment_succeeded` webhook. A booking that never gets paid is cancelled by the stale-pending sweep or a `payment_expired` webhook (payments.md §12). Staff-created bookings (§7) are the exception: they default straight to `confirmed`, since they represent walk-ins already served.
 
 **Price calculation**
 

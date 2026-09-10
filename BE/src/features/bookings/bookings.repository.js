@@ -94,6 +94,25 @@ export class BookingsRepository {
   }
 
   /**
+   * Everything the payments feature needs to build a PayBridge charge —
+   * reached via bookings/index.js, never a direct cross-feature import
+   * (be-architecture.md §7).
+   * @param {string} id
+   * @returns {Promise<any>}
+   */
+  findByIdWithBillingDetails(id) {
+    return this.db.booking.findUnique({
+      where: { id },
+      include: {
+        user: { select: { id: true, name: true, email: true, phone: true } },
+        workspace: {
+          select: { name: true, location: { select: { name: true, timezone: true } } },
+        },
+      },
+    });
+  }
+
+  /**
    * @param {string} reference
    * @returns {Promise<(import("@prisma/client").Booking & { workspace: any }) | null>}
    */

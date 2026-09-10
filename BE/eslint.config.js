@@ -36,6 +36,7 @@ export default [
       "boundaries/files": [
         { category: "featureApi", pattern: "src/features/*/index.js" },
         { category: "app", pattern: "src/{app,server}.js" },
+        { category: "app", pattern: "src/jobs/**" },
       ],
     },
     rules: {

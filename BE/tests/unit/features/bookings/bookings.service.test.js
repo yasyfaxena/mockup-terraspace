@@ -184,10 +184,10 @@ describe("BookingsService.create", () => {
     await expect(service.create("u1", VALID_CREATE)).rejects.toBeInstanceOf(SlotTakenError);
   });
 
-  it("snapshots status as confirmed and paymentStatus stays pending (no payments feature yet)", async () => {
+  it("starts pending — confirmed only once the payments service processes payment_succeeded", async () => {
     const { service } = makeService();
     const dto = await service.create("u1", VALID_CREATE);
-    expect(dto.status).toBe("confirmed");
+    expect(dto.status).toBe("pending");
     expect(dto.paymentStatus).toBe("pending");
   });
 });
