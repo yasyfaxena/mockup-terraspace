@@ -4,6 +4,7 @@ import { app } from "../../../../src/app.js";
 import { seedLocation } from "../../../factories/location.factory.js";
 import { seedWorkspace } from "../../../factories/workspace.factory.js";
 import { seedAmenity, linkLocationAmenity } from "../../../factories/amenity.factory.js";
+import { createUserAndSignIn } from "../../../helpers/auth.js";
 
 describe("GET /locations (locations.md §1)", () => {
   it("computes stats in SQL, counting every workspace regardless of availability", async () => {
@@ -100,5 +101,95 @@ describe("GET /locations/:slug (locations.md §2)", () => {
     const location = await seedLocation({ status: "inactive" });
     const res = await request(app).get(`/api/v1/locations/${location.slug}`);
     expect(res.status).toBe(404);
+  });
+});
+
+describe("Admin locations (locations.md §3–6)", () => {
+  it("rejects a punctuation-only slug with 422, never persisting it", async () => {
+    const { cookie } = await createUserAndSignIn({ role: "admin" });
+    const res = await request(app)
+      .post("/api/v1/admin/locations")
+      .set("Cookie", cookie)
+      .send({ slug: "!!!", name: "Test", address: "Addr", city: "City" });
+
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe("VALIDATION_FAILED");
+  });
+
+  it("slugifies the input server-side", async () => {
+    const { cookie } = await createUserAndSignIn({ role: "admin" });
+    const res = await request(app)
+      .post("/api/v1/admin/locations")
+      .set("Cookie", cookie)
+      .send({ slug: "  Terra Space!! Bandung  ", name: "Test", address: "Addr", city: "City" });
+
+    expect(res.status).toBe(201);
+    expect(res.body.slug).toBe("terra-space-bandung");
+  });
+
+  it("rejects a duplicate slug with 409", async () => {
+    const { cookie } = await createUserAndSignIn({ role: "admin" });
+    const existing = await seedLocation();
+
+    const res = await request(app)
+      .post("/api/v1/admin/locations")
+      .set("Cookie", cookie)
+      .send({ slug: existing.slug, name: "Test", address: "Addr", city: "City" });
+
+    expect(res.status).toBe(409);
+  });
+
+  it("rejects an unknown or inactive amenityId", async () => {
+    const { cookie } = await createUserAndSignIn({ role: "admin" });
+    const inactive = await seedAmenity({ status: "inactive" });
+
+    const res = await request(app)
+      .post("/api/v1/admin/locations")
+      .set("Cookie", cookie)
+      .send({
+        slug: "test-amenity-loc",
+        name: "Test",
+        address: "Addr",
+        city: "City",
+        amenityIds: [inactive.id],
+      });
+
+    expect(res.status).toBe(422);
+  });
+
+  it("keeps every workspace attached when the slug is renamed — the FK is locationId", async () => {
+    const { cookie } = await createUserAndSignIn({ role: "admin" });
+    const location = await seedLocation();
+    const workspace = await seedWorkspace({ locationId: location.id });
+
+    const renameRes = await request(app)
+      .patch(`/api/v1/admin/locations/${location.id}`)
+      .set("Cookie", cookie)
+      .send({ slug: "renamed-slug" });
+    expect(renameRes.status).toBe(200);
+    expect(renameRes.body.slug).toBe("renamed-slug");
+    expect(renameRes.body.workspaceCount).toBe(1);
+
+    const listRes = await request(app)
+      .get(`/api/v1/admin/workspaces?locationId=${location.id}`)
+      .set("Cookie", cookie);
+    expect(listRes.body.data.map((entry) => entry.id)).toContain(workspace.id);
+  });
+
+  it("returns 409 when deleting a location with workspaces, 200 once empty", async () => {
+    const { cookie } = await createUserAndSignIn({ role: "admin" });
+    const location = await seedLocation();
+    await seedWorkspace({ locationId: location.id });
+
+    const blocked = await request(app)
+      .delete(`/api/v1/admin/locations/${location.id}`)
+      .set("Cookie", cookie);
+    expect(blocked.status).toBe(409);
+
+    const empty = await seedLocation();
+    const allowed = await request(app)
+      .delete(`/api/v1/admin/locations/${empty.id}`)
+      .set("Cookie", cookie);
+    expect(allowed.status).toBe(200);
   });
 });

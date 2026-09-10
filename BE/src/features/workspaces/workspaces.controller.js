@@ -28,3 +28,39 @@ export const getAvailability = async (req, res, next) => {
     return next(err);
   }
 };
+
+/** @type {import("express").RequestHandler} */
+export const listAdmin = async (req, res, next) => {
+  try {
+    return res.json(await workspacesService.listAdmin(/** @type {any} */ (req).validatedQuery));
+  } catch (err) {
+    return next(err);
+  }
+};
+
+/** @type {import("express").RequestHandler} */
+export const create = async (req, res, next) => {
+  try {
+    return res.status(201).json(await workspacesService.create(req.body));
+  } catch (err) {
+    return next(err);
+  }
+};
+
+/** @type {import("express").RequestHandler} */
+export const update = async (req, res, next) => {
+  try {
+    return res.json(await workspacesService.update(stringParam(req, "id"), req.body));
+  } catch (err) {
+    return next(err);
+  }
+};
+
+/** @type {import("express").RequestHandler} */
+export const remove = async (req, res, next) => {
+  try {
+    return res.json(await workspacesService.remove(stringParam(req, "id")));
+  } catch (err) {
+    return next(err);
+  }
+};

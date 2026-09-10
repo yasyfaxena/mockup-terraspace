@@ -53,3 +53,34 @@ export function toWorkspaceDetailDto(workspace, pricingContext) {
     qrProvider: workspace.qrProvider,
   };
 }
+
+/**
+ * @param {import("@prisma/client").Workspace & {
+ *   _count?: { bookings: number },
+ *   workspaceAmenities?: Array<{ amenityId: string }>,
+ *   location: { id: string, name: string, slug: string },
+ * }} workspace
+ * @returns {import("./workspaces.types.js").AdminWorkspaceDto}
+ */
+export function toAdminWorkspaceDto(workspace) {
+  return {
+    id: workspace.id,
+    locationId: workspace.locationId,
+    name: workspace.name,
+    type: workspace.type,
+    floor: workspace.floor,
+    pricePerHour: toMoneyString(workspace.pricePerHour),
+    availability: workspace.availability,
+    simpleBooking: workspace.simpleBooking,
+    imageUrl: workspace.imageUrl,
+    description: workspace.description,
+    cancellationPolicy: workspace.cancellationPolicy,
+    calendarSyncProvider: workspace.calendarSyncProvider,
+    qrProvider: workspace.qrProvider,
+    amenityIds: (workspace.workspaceAmenities ?? []).map((link) => link.amenityId),
+    activeBookingCount: workspace._count?.bookings ?? 0,
+    location: workspace.location,
+    createdAt: workspace.createdAt.toISOString(),
+    updatedAt: workspace.updatedAt.toISOString(),
+  };
+}

@@ -151,3 +151,33 @@ export function toLocationDetailDto(location, currency) {
       .map((workspace) => ({ ...toWorkspaceSummaryDto(workspace), currency })),
   };
 }
+
+/**
+ * @param {import("@prisma/client").Location & {
+ *   _count?: { workspaces: number },
+ *   locationAmenities?: Array<{ amenityId: string }>,
+ * }} location
+ * @returns {import("./locations.types.js").AdminLocationDto}
+ */
+export function toAdminLocationDto(location) {
+  return {
+    id: location.id,
+    slug: location.slug,
+    name: location.name,
+    address: location.address,
+    city: location.city,
+    imageUrl: location.imageUrl,
+    openingHours: location.openingHours,
+    access247: location.access247,
+    description: location.description,
+    latitude: toCoordinateString(location.latitude),
+    longitude: toCoordinateString(location.longitude),
+    accessRadiusMeters: location.accessRadiusMeters,
+    timezone: location.timezone,
+    status: location.status,
+    workspaceCount: location._count?.workspaces ?? 0,
+    amenityIds: (location.locationAmenities ?? []).map((link) => link.amenityId),
+    createdAt: location.createdAt.toISOString(),
+    updatedAt: location.updatedAt.toISOString(),
+  };
+}

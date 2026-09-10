@@ -91,4 +91,105 @@ export class LocationsRepository {
       },
     });
   }
+
+  /** @param {{ status?: string, q?: string }} filters */
+  findAllAdmin({ status, q }) {
+    const where = /** @type {import("@prisma/client").Prisma.LocationWhereInput} */ ({
+      ...(status ? { status } : {}),
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q, mode: "insensitive" } },
+              { city: { contains: q, mode: "insensitive" } },
+              { slug: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    });
+    return this.db.location.findMany({
+      where,
+      include: {
+        _count: { select: { workspaces: true } },
+        locationAmenities: { select: { amenityId: true } },
+      },
+      orderBy: { name: "asc" },
+    });
+  }
+
+  /** @param {string} id */
+  findByIdAdmin(id) {
+    return this.db.location.findUnique({
+      where: { id },
+      include: {
+        _count: { select: { workspaces: true } },
+        locationAmenities: { select: { amenityId: true } },
+      },
+    });
+  }
+
+  /** @param {string} id */
+  findById(id) {
+    return this.db.location.findUnique({ where: { id } });
+  }
+
+  /** @param {string} slug */
+  findBySlug(slug) {
+    return this.db.location.findUnique({ where: { slug } });
+  }
+
+  /** @param {string} id */
+  countWorkspaces(id) {
+    return this.db.workspace.count({ where: { locationId: id } });
+  }
+
+  /**
+   * @param {Record<string, unknown>} data
+   * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   */
+  create(data, client = this.db) {
+    return client.location.create({ data: /** @type {any} */ (data) });
+  }
+
+  /**
+   * @param {string} id
+   * @param {Record<string, unknown>} data
+   * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   */
+  update(id, data, client = this.db) {
+    return client.location.update({ where: { id }, data: /** @type {any} */ (data) });
+  }
+
+  /** @param {string} id */
+  delete(id) {
+    return this.db.location.delete({ where: { id } });
+  }
+
+  /**
+   * @param {string} locationId
+   * @param {string[]} amenityIds
+   * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   */
+  async setAmenities(locationId, amenityIds, client = this.db) {
+    if (amenityIds.length === 0) return;
+    await client.locationAmenity.createMany({
+      data: amenityIds.map((amenityId) => ({ locationId, amenityId })),
+    });
+  }
+
+  /**
+   * Replaces the entire amenity set — used on PATCH, when `amenityIds` was
+   * sent at all (an omitted field leaves existing assignments untouched).
+   * @param {string} locationId
+   * @param {string[]} amenityIds
+   * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   */
+  async replaceAmenities(locationId, amenityIds, client = this.db) {
+    await client.locationAmenity.deleteMany({ where: { locationId } });
+    await this.setAmenities(locationId, amenityIds, client);
+  }
+
+  /** @param {(tx: import("@prisma/client").Prisma.TransactionClient) => Promise<any>} callback */
+  transaction(callback) {
+    return this.db.$transaction(callback);
+  }
 }

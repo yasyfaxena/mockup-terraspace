@@ -261,8 +261,8 @@ The updated admin object.
 | Status | Code | When |
 |---|---|---|
 | 404 | `NOT_FOUND` | No such workspace |
-| 409 | `CONFLICT` | Non-cancelled bookings reference it |
+| 409 | `CONFLICT` | Non-cancelled bookings reference it, or `ON DELETE RESTRICT` rejects the delete |
 
-The current implementation already blocks this in application code (`catalog.ts:409-412`). V2 keeps the friendly check **and** backs it with `ON DELETE RESTRICT`, so a concurrent booking created between the check and the delete cannot slip through.
+The application layer blocks the delete with a friendly 409 whenever a non-cancelled booking references the workspace. But `bookings.workspace_id` is `ON DELETE RESTRICT` (erd-spec.md #5) **unconditionally** — the constraint has no notion of booking status, so it blocks the delete for as long as *any* booking row exists, including cancelled ones. In practice this means a workspace can only ever be hard-deleted if it has never had a single booking; a concurrent booking created between the check and the delete is caught the same way. Once a workspace has any booking history, it can never be un-deleted — retire it with `availability = 'disabled'` instead (see below).
 
 Retire a workspace with `availability = 'disabled'` instead — it leaves the catalog and stops accepting bookings while its history stays intact.

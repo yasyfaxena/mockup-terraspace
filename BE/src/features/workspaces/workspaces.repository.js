@@ -79,4 +79,115 @@ export class WorkspacesRepository {
       include: { location: { select: { timezone: true, access247: true } } },
     });
   }
+
+  /**
+   * Includes `disabled` workspaces and those at inactive locations
+   * (workspaces.md §4) — admin sees everything, not just what's bookable.
+   * @param {{
+   *   locationId?: string, type?: string[], availability?: string[], amenityIds?: string[],
+   *   minPrice?: number, maxPrice?: number, q?: string,
+   *   sort: string, order: string, page: number, limit: number,
+   * }} params
+   */
+  async findAllAdmin(params) {
+    const where = /** @type {import("@prisma/client").Prisma.WorkspaceWhereInput} */ ({
+      ...(params.locationId ? { locationId: params.locationId } : {}),
+      ...(params.type?.length ? { type: { in: params.type } } : {}),
+      ...(params.availability?.length ? { availability: { in: params.availability } } : {}),
+      ...(params.q ? { name: { contains: params.q, mode: "insensitive" } } : {}),
+      ...(params.minPrice !== undefined ? { pricePerHour: { gte: params.minPrice } } : {}),
+      ...(params.maxPrice !== undefined ? { pricePerHour: { lte: params.maxPrice } } : {}),
+      AND: (params.amenityIds ?? []).map((amenityId) => ({
+        workspaceAmenities: { some: { amenityId } },
+      })),
+    });
+
+    const [rows, total] = await Promise.all([
+      this.db.workspace.findMany({
+        where,
+        include: {
+          _count: { select: { bookings: { where: { status: { not: "cancelled" } } } } },
+          workspaceAmenities: { select: { amenityId: true } },
+          location: { select: { id: true, name: true, slug: true } },
+        },
+        orderBy: { [SORT_FIELD[params.sort] ?? "createdAt"]: params.order },
+        skip: (params.page - 1) * params.limit,
+        take: params.limit,
+      }),
+      this.db.workspace.count({ where }),
+    ]);
+
+    return { rows, total };
+  }
+
+  /** @param {string} id */
+  findByIdAdmin(id) {
+    return this.db.workspace.findUnique({
+      where: { id },
+      include: {
+        _count: { select: { bookings: { where: { status: { not: "cancelled" } } } } },
+        workspaceAmenities: { select: { amenityId: true } },
+        location: { select: { id: true, name: true, slug: true } },
+      },
+    });
+  }
+
+  /** @param {string} id */
+  findById(id) {
+    return this.db.workspace.findUnique({ where: { id } });
+  }
+
+  /** Non-cancelled bookings — the delete guard (workspaces.md §7). @param {string} id */
+  countActiveBookings(id) {
+    return this.db.booking.count({ where: { workspaceId: id, status: { not: "cancelled" } } });
+  }
+
+  /**
+   * @param {Record<string, unknown>} data
+   * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   */
+  create(data, client = this.db) {
+    return client.workspace.create({ data: /** @type {any} */ (data) });
+  }
+
+  /**
+   * @param {string} id
+   * @param {Record<string, unknown>} data
+   * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   */
+  update(id, data, client = this.db) {
+    return client.workspace.update({ where: { id }, data: /** @type {any} */ (data) });
+  }
+
+  /** @param {string} id */
+  delete(id) {
+    return this.db.workspace.delete({ where: { id } });
+  }
+
+  /**
+   * @param {string} workspaceId
+   * @param {string[]} amenityIds
+   * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   */
+  async setAmenities(workspaceId, amenityIds, client = this.db) {
+    if (amenityIds.length === 0) return;
+    await client.workspaceAmenity.createMany({
+      data: amenityIds.map((amenityId) => ({ workspaceId, amenityId })),
+    });
+  }
+
+  /**
+   * @param {string} workspaceId
+   * @param {string[]} amenityIds
+   * @param {import("@prisma/client").Prisma.TransactionClient} [client]
+   */
+  async replaceAmenities(workspaceId, amenityIds, client = this.db) {
+    await client.workspaceAmenity.deleteMany({ where: { workspaceId } });
+    await this.setAmenities(workspaceId, amenityIds, client);
+  }
+
+  /** @param {(tx: import("@prisma/client").Prisma.TransactionClient) => Promise<any>} callback */
+  transaction(callback) {
+    return this.db.$transaction(callback);
+  }
 }
