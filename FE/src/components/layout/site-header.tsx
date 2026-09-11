@@ -26,16 +26,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useI18n } from "@/shared/i18n";
-import { useAuthPlaceholder } from "@/lib/auth-placeholder";
+import { useSession } from "@/features/auth";
+import { authClient } from "@/lib/auth-client";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const { t } = useI18n();
-  const { session, profile, signOut } = useAuthPlaceholder();
+  const { data } = useSession();
+  const session = data?.session;
+  const user = data?.user;
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    await signOut();
+    await authClient.signOut();
     navigate({ to: "/", replace: true });
   };
 
@@ -172,7 +175,7 @@ export function SiteHeader() {
                 >
                   <User className="size-3.5 transition-colors group-hover:text-primary-foreground" />
                   <span className="font-extrabold tracking-wide transition-colors group-hover:text-primary-foreground">
-                    {profile?.full_name?.split(" ")[0] ?? t("cta.dashboard")}
+                    {user?.name?.split(" ")[0] ?? t("cta.dashboard")}
                   </span>
                 </button>
               </DropdownMenuTrigger>
@@ -181,7 +184,7 @@ export function SiteHeader() {
                 className="w-56 rounded-2xl border-border/80 bg-card/95 p-2 backdrop-blur-2xl shadow-2xl"
               >
                 <DropdownMenuLabel className="truncate text-[11px] font-medium text-muted-foreground px-2">
-                  {session.user.email}
+                  {user?.email}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem

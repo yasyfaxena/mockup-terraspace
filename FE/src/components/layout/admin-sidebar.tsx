@@ -18,7 +18,8 @@ import {
   CalendarRange,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuthPlaceholder } from "@/lib/auth-placeholder";
+import { useSession } from "@/features/auth";
+import { authClient } from "@/lib/auth-client";
 import logoIcon from "@/assets/logo-icon.png";
 
 export type AdminTab =
@@ -102,7 +103,8 @@ export function AdminSidebar({
   notifCount: number;
   onClose?: () => void;
 }) {
-  const { user, profile, signOut } = useAuthPlaceholder();
+  const { data } = useSession();
+  const user = data?.user;
 
   return (
     <>
@@ -205,10 +207,10 @@ export function AdminSidebar({
             <p className="text-[11px] font-semibold text-white truncate">
               {user?.email ?? "Admin"}
             </p>
-            <p className="text-[9px] text-white/30 capitalize">{profile?.role ?? "admin"}</p>
+            <p className="text-[9px] text-white/30 capitalize">{user?.role ?? "admin"}</p>
           </div>
           <button
-            onClick={() => signOut()}
+            onClick={() => authClient.signOut()}
             className="p-1 text-white/25 hover:text-red-400 transition-colors"
             title="Sign out"
           >

@@ -113,25 +113,25 @@ Implementation plan derived from the V2/FE specification. Phased to track [BE `d
 
 ---
 
-## Phase 2 — Auth
+## Phase 2 — Auth ✅ done
 
 **Goal:** sign up, sign in, session-aware routing — against Better Auth once [BE Phase 2](../BE/development-phases.md#phase-2--auth) lands.
 
-### Build
+**What shipped:** `FE/src/lib/auth-client.ts` (Better Auth's `createAuthClient` from `better-auth/react` + `adminClient()` plugin, pointed at `BE/`'s real `/api/auth/*`), `FE/src/features/auth/` (`auth.types.ts`, `auth.schema.ts`, `auth.hooks.ts`, `components/{sign-in-form,sign-up-form}.tsx`, `index.ts`), real forms wired into `login.tsx`/`signup.tsx`, an auth-required `dashboard.tsx`, and two new guarded routes proving the guard end to end: `admin_.login.tsx` (same `SignInForm`, per [`features/auth.md`](./features/auth.md) §6) and a minimal `admin.tsx` gated by `requireRole("admin")`. `site-header.tsx`/`admin-sidebar.tsx` now call the real `useSession()`/`authClient.signOut()` — Phase 1's `lib/auth-placeholder.ts` is deleted.
 
-| Area | Files |
-|---|---|
-| Client | `lib/auth-client.ts` — Better Auth's browser client, cookie-based |
-| Hooks | `features/auth/auth.hooks.ts` — `useSession`, `useRequireRole` |
-| Forms | `features/auth/components/{sign-in-form,sign-up-form}.tsx` |
-| Guards | Route `beforeLoad` calling `useRequireRole` — see [`features/auth.md`](./features/auth.md) §3 |
+**Two deviations from this section as originally written, both discovered while actually building it:**
+
+1. **`requireRole`/`requireAuth`, not `useRequireRole`.** `beforeLoad` runs outside a component render; naming the guard with a `use` prefix trips `eslint-plugin-react-hooks`' rules-of-hooks check the moment it's called from `beforeLoad`. Behavior is unchanged — anonymous → `/login`, wrong role → `/`, never the same redirect for both.
+2. **SSR needs the browser's cookie forwarded by hand.** `beforeLoad` also runs during SSR, where `authClient.getSession()`'s fetch is a real cross-process HTTP call to `BE/` that starts with no cookies at all — every hard-refresh/direct-link load looked signed-out until the incoming request's `Cookie` header is explicitly forwarded. `@tanstack/react-start/server`'s `getRequestHeader` can't just be imported directly into `auth.hooks.ts`, though — Start's build statically forbids a server-only import reaching a file also used client-side (`site-header.tsx` imports the same module for `useSession()`). The fix is `createIsomorphicFn().client(...).server(...)`, which the Start compiler is actually built to split per-environment.
+
+**Known rough edge, not fixed this phase:** `site-header.tsx`'s `useSession()` still renders the signed-out state during the SSR pass for an already-authenticated visitor (it corrects after client hydration in a real browser) — only `dashboard.tsx` was fixed for this, by reading the already-resolved session off `beforeLoad`'s route context instead of calling `useSession()` a second time. Doing the same for the header would mean every route (not just guarded ones) pays for a session fetch in its `beforeLoad`, which is a bigger call than Phase 2 asked for.
 
 ### Exit criteria
 
-- [ ] Sign up → sign in → an authenticated route renders the session's name
-- [ ] `requireRole("admin")` redirects a customer to `/`, and an anonymous visitor to `/login`, with the correct one of the two — never the same redirect for both (mirrors [BE `error-handling.md`](../BE/error-handling.md) §5's 401-vs-403 distinction)
-- [ ] `src/lib/auth-server.ts`, `src/lib/auth-guards-server.ts`, `src/lib/password-server.ts` deleted — same files [BE `development-phases.md`](../BE/development-phases.md) Phase 2 names for removal
-- [ ] No component reads a cookie or token directly — only `auth-client.ts` does
+- [x] Sign up → sign in → an authenticated route renders the session's name — verified against a real running `BE/`: signed up via `POST /api/auth/sign-up/email`, flipped `emailVerified` via Prisma (mirrors `BE/tests/helpers/auth.js`'s own approach — no inbox access to click a real verification link), signed in, then `curl`'d `/dashboard` and got back `Signed in as Verify Check.`
+- [x] `requireRole("admin")` redirects a customer to `/`, and an anonymous visitor to `/login` — verified all three cases by `curl`: anonymous → `/login` (307), signed-in customer → `/` (307), promoted to `admin` role → `200` with the real page. Also covered by 9 passing unit tests (`tests/unit/features/auth/auth.hooks.test.ts`) mocking `authClient.getSession`
+- [x] ~~`src/lib/auth-server.ts`, `src/lib/auth-guards-server.ts`, `src/lib/password-server.ts` deleted~~ — N/A under the separate-app architecture (decision #1): those are root-app files: the root app is still live and untouched until full cutover. `FE/` never had them to begin with — it only ever talks to Better Auth through `lib/auth-client.ts`
+- [x] No component reads a cookie or token directly — only `lib/auth-client.ts` (and, for the SSR-only cookie-forwarding case, `auth.hooks.ts`'s `createIsomorphicFn` server branch) touch anything cookie-shaped
 
 ---
 
