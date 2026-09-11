@@ -96,17 +96,20 @@ Implementation plan derived from the V2/FE specification. Phased to track [BE `d
 
 ### Build
 
-- Rename `frontend/ui/*` → `components/ui/*` — the 14 files that exist today (`accordion`, `button`, `checkbox`, `dropdown-menu`, `input`, `label`, `radio-group`, `select`, `separator`, `sheet`, `skeleton`, `slider`, `sonner`, `textarea`) are relocated, not rewritten (`frontend-spec.md` §2)
-- Build the primitives that don't exist yet but are needed from Phase 2 onward: `dialog.tsx`, `tabs.tsx`, `switch.tsx`, a real data-table — their Radix packages are already dependencies, the files are not
-- Rename `frontend/site/site-shell.tsx` → `components/layout/site-shell.tsx` (unchanged)
-- Split `frontend/admin/admin-layout.tsx` into `components/layout/admin-shell.tsx` (top bar + content frame) and `admin-sidebar.tsx` (the 5-group nav — see `fe-architecture.md` §2) — a deliberate decomposition, not a straight rename
+- Copy `src/frontend/ui/*` → `FE/src/components/ui/*` — the 14 files (`accordion`, `button`, `checkbox`, `dropdown-menu`, `input`, `label`, `radio-group`, `select`, `separator`, `sheet`, `skeleton`, `slider`, `sonner`, `textarea`) carried over byte-for-byte, only `@/lib/utils` re-created in the new app (`frontend-spec.md` §2)
+- Build the primitives that don't exist yet: `dialog.tsx`, `tabs.tsx`, `switch.tsx` (their Radix packages are already dependencies, the files were not), plus `table.tsx` + `data-table.tsx` on `@tanstack/react-table` — the real `<table>`-based grid replacing V1's CSS-grid fake tables
+- Copy `site-shell.tsx`/`site-header.tsx`/`site-footer.tsx` → `components/layout/` (unchanged markup/behavior), plus `shared/i18n.tsx` (self-contained, no route dependency) — `useAuth()` is temporarily swapped for a local `lib/auth-placeholder.ts` since Better Auth doesn't exist until Phase 2
+- Copy the real `src/styles.css` design tokens into `FE/src/styles.css` (was a Phase-0 placeholder) — this is what "Design system" phase is actually for
+- Split `frontend/admin/admin-layout.tsx` into `components/layout/admin-shell.tsx` (top bar + content frame) and `admin-sidebar.tsx` (the 5-group nav — see `fe-architecture.md` §2) — a deliberate decomposition, not a straight rename; `activeTab`/`onTabChange` props kept as-is (Phase 4 wires real per-page routes)
+- 11 thin stub routes so header/footer `Link`s type-check: `workspaces.index`, `locations.index`, `amenities`, `dashboard`, `login`, `signup` (real content lands in their owning phase) and `pricing`, `how-it-works`, `help`, `terms`, `privacy` (static pages — V1's real copy is not yet ported, still open)
 - Confirm no `components/ui/*` file imports a feature — this is the one invariant Phase 1 exists to establish
 
 ### Exit criteria
 
-- [ ] `frontend/` is empty and deleted
-- [ ] `components/ui/*` has zero imports from `features/` or `routes/` (enforced by [`linter.md`](./linter.md) §7 boundaries from this point on)
-- [ ] Every route still renders — this phase changes no behavior for the 14 relocated primitives; `dialog`/`tabs`/`switch`/data-table are genuinely new and may change how existing modals/toggles are built once later phases adopt them
+- [x] ~~`frontend/` is empty and deleted~~ — N/A under the separate-app architecture (decision #1): `src/frontend/` stays untouched in the root app until full cutover, since that app is still live. `FE/src/components/ui/` now has its own faithful copies instead
+- [x] `components/ui/*` has zero imports from `features/` or `routes/` (verified by grep; `eslint-plugin-boundaries` enforcement itself is still open — no `features/` exist yet to write real boundary rules against)
+- [x] Every route still renders — verified against a real running `BE/`: dev server + `curl` on `/`, `/workspaces`, `/pricing`, `/dashboard` (200) and a nonexistent path (404); production build also succeeds
+- [ ] Full static-page content (pricing/how-it-works/help/terms/privacy) — still just placeholders, not ported from `src/routes/*.tsx`
 
 ---
 

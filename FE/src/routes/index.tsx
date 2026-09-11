@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { queryKeys } from "@/shared/query-keys";
+import { SiteShell, PageHeader } from "@/components/layout/site-shell";
 
 type HealthResponse = { status: "healthy" | "unhealthy" };
 
@@ -16,15 +17,21 @@ function HomePage() {
   });
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-2 p-6 text-center">
-      <h1 className="text-xl font-semibold">TerraSpace V2 — Phase 0</h1>
-      {isPending && <p>Checking BE/ health…</p>}
-      {isError && (
-        <p className="text-red-600">
-          BE/ unreachable: {error instanceof ApiError ? error.code : error.message}
-        </p>
-      )}
-      {data && <p>BE/ status: {data.status}</p>}
-    </main>
+    <SiteShell>
+      <PageHeader
+        eyebrow="TerraSpace V2"
+        title="Find your premium workspace"
+        description="Phase 0/1 scaffold — catalog browsing lands in Phase 3."
+      />
+      <div className="container-page py-8 text-center text-sm">
+        {isPending && <p>Checking BE/ health…</p>}
+        {isError && (
+          <p className="text-destructive">
+            BE/ unreachable: {error instanceof ApiError ? error.code : error.message}
+          </p>
+        )}
+        {data && <p>BE/ status: {data.status}</p>}
+      </div>
+    </SiteShell>
   );
 }
