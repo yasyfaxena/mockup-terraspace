@@ -129,8 +129,9 @@ CREATE TYPE workspace_type         AS ENUM ('hot_desk','dedicated_desk','private
 CREATE TYPE workspace_availability AS ENUM ('available','limited','full','maintenance','disabled');
 CREATE TYPE booking_status         AS ENUM ('pending','confirmed','cancelled','completed');
 CREATE TYPE payment_status         AS ENUM ('pending','paid','failed','refunded');
-CREATE TYPE payment_method         AS ENUM ('card','ewallet','bank');
 ```
+
+> No `payment_method` enum exists — §13 notes the column it would have backed was removed in favor of `payments.payment_method_code`/`payment_method_category` ([`features/payments.md`](./features/payments.md) §2), which can express PayBridge's real method codes (`BCA_VIRTUAL_ACCOUNT`, `OVO`, …) that a fixed three-value enum can't.
 
 ---
 

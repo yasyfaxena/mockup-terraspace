@@ -11,6 +11,7 @@ import {
   Sparkles,
   Tag,
   User,
+  UserCog,
   Compass,
 } from "lucide-react";
 import { useState } from "react";
@@ -194,6 +195,14 @@ export function SiteHeader() {
                   <Link to="/dashboard">{t("cta.dashboard")}</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  asChild
+                  className="rounded-xl text-xs font-bold cursor-pointer hover:bg-primary/15 hover:text-primary"
+                >
+                  <Link to="/profile">
+                    <UserCog className="mr-1 size-3.5" /> My profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
                   onClick={handleSignOut}
                   className="rounded-xl text-xs font-bold text-destructive hover:bg-destructive/15 focus:bg-destructive/15 cursor-pointer"
                 >
@@ -337,6 +346,14 @@ export function SiteHeader() {
                         onClick={() => setOpen(false)}
                       >
                         <Link to="/dashboard">{t("cta.dashboard")}</Link>
+                      </Button>
+                      <Button
+                        asChild
+                        variant="outline"
+                        className="rounded-xl text-xs font-bold"
+                        onClick={() => setOpen(false)}
+                      >
+                        <Link to="/profile">My profile</Link>
                       </Button>
                       <Button
                         variant="ghost"

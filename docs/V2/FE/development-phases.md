@@ -287,6 +287,16 @@ Verified against real running `BE/`/`FE/` dev servers throughout: `npm run check
 
 ---
 
+## 1a. Out-of-band fix — `features/users/` (customer profile) was never scheduled
+
+Found by the user during live manual testing, not by a phase plan: `docs/V2/FE/features/users.md` fully specifies a customer-facing "My profile" screen (`profile-form.tsx`, `useMe()`/`useUpdateProfile()` against BE's real `GET`/`PATCH /me`) — BE has shipped both endpoints since its own Phase 2, and the FE doc has described this screen since before Phase 0. It simply never appeared as a line item in any of Phases 0–8 above (`admin.members.tsx`'s placeholder only ever flagged the *admin* user-list panel as unscheduled — the separate, customer-facing profile page was a distinct gap that went unnoticed until someone actually looked for it in the running app).
+
+**Shipped:** `features/users/` — `MeDto`/`AuthMethodDto` types mirroring `users.mapper.js`'s `toMeDto` exactly, `updateProfileSchema` mirroring `updateMeSchema` (name/phone/company only — role and ban fields are admin-only inputs on a separate schema, per users.md §4), and `profile-form.tsx` (stats tiles for bookings/upcoming/total spent, a read-only email field, editable name/phone/company). A new `/profile` route (`requireAuth`, loader-prefetches `meQueryOptions()` so SSR renders real data, not a skeleton) plus a "My profile" link in both the desktop dropdown and mobile sheet nav.
+
+Verified against a real running `BE/`: `GET`/`PATCH /me` round-tripped with a real Indonesian-format phone number (`+62812345678` — confirmed BE's `isValidPhoneNumber(value, "MY")` check, despite defaulting to Malaysia's region, still accepts any number with an explicit `+` country code, so this isn't actually a live bug for IDR/Indonesia-formatted input as feared), and the FE page reflects the update via SSR on the next load — hit one transient "fetch failed" during this same verification pass (a `vite build` run concurrently with the dev server, not a code defect — a clean retry immediately after confirmed the real page renders correctly). `npm run check`/`test`/`build` all clean afterward.
+
+---
+
 ## 2. Definition of done — every phase
 
 | | |

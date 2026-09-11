@@ -50,4 +50,7 @@ export const queryKeys = {
     payments: (params?: unknown) => ["reports", "payments", params ?? {}] as const,
     activity: (params?: unknown) => ["reports", "activity", params ?? {}] as const,
   },
+  users: {
+    me: () => ["users", "me"] as const,
+  },
 } as const;
