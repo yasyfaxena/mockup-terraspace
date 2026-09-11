@@ -1,5 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AdminSettingsForm, adminSettingsQueryOptions } from "@/features/settings";
 
 export const Route = createFileRoute("/admin/settings")({
-  component: () => <p className="text-sm text-white/60">Admin settings form lands in Phase 7.</p>,
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(adminSettingsQueryOptions()),
+  component: () => (
+    <div className="space-y-5">
+      <p className="text-xs text-white/35">
+        Platform-wide values — these move money (tax, cancellation, currency).
+      </p>
+      <AdminSettingsForm />
+    </div>
+  ),
 });

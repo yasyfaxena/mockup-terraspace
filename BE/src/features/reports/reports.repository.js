@@ -274,8 +274,8 @@ export class ReportsRepository {
     const whereSql = conditions.join(" AND ");
     const trunc = DATE_TRUNC_UNIT[groupBy];
 
-    const workspaceLocationFilter = locationId ? "AND w.location_id = $1::uuid" : "";
-    const workspaceValues = locationId ? [locationId] : [];
+    const workspaceLocationFilter = locationId ? "AND w.location_id = $3::uuid" : "";
+    const workspaceValues = locationId ? [from, to, locationId] : [from, to];
 
     const [bookedHours, series, byWorkspace] = await Promise.all([
       this.db.$queryRawUnsafe(
@@ -297,10 +297,10 @@ export class ReportsRepository {
            w.id AS "workspaceId", w.name AS "workspaceName", w.type,
            l.name AS "locationName", l.access_24_7 AS "access247",
            COALESCE(SUM(b.duration_hours) FILTER (
-             WHERE b.booking_date BETWEEN $2::date AND $3::date AND b.status != 'cancelled'
+             WHERE b.booking_date BETWEEN $1::date AND $2::date AND b.status != 'cancelled'
            ), 0) AS booked_hours,
            COALESCE(SUM(b.total_amount) FILTER (
-             WHERE b.booking_date BETWEEN $2::date AND $3::date AND b.payment_status = 'paid'
+             WHERE b.booking_date BETWEEN $1::date AND $2::date AND b.payment_status = 'paid'
            ), 0) AS revenue
          FROM workspaces w
            JOIN locations l ON l.id = w.location_id
@@ -308,8 +308,6 @@ export class ReportsRepository {
          WHERE w.availability NOT IN ('disabled', 'maintenance') ${workspaceLocationFilter}
          GROUP BY w.id, w.name, w.type, l.name, l.access_24_7`,
         ...workspaceValues,
-        from,
-        to,
       ),
     ]);
 

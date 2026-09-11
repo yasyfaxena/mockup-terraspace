@@ -35,11 +35,19 @@ export const queryKeys = {
   },
   settings: {
     public: () => ["settings", "public"] as const,
+    admin: () => ["settings", "admin"] as const,
   },
   payments: {
     methods: (provider?: string) => ["payments", "methods", provider ?? "xendit"] as const,
     status: (reference: string) => ["payments", "status", reference] as const,
     adminList: (params?: unknown) => ["payments", "admin-list", params ?? {}] as const,
     adminDetail: (id: string) => ["payments", "admin-detail", id] as const,
+  },
+  reports: {
+    overview: (params?: unknown) => ["reports", "overview", params ?? {}] as const,
+    revenue: (params?: unknown) => ["reports", "revenue", params ?? {}] as const,
+    occupancy: (params?: unknown) => ["reports", "occupancy", params ?? {}] as const,
+    payments: (params?: unknown) => ["reports", "payments", params ?? {}] as const,
+    activity: (params?: unknown) => ["reports", "activity", params ?? {}] as const,
   },
 } as const;

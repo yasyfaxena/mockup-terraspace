@@ -78,6 +78,25 @@ describe("GET /admin/reports/occupancy (reports.md §3)", () => {
     expect(res.body.leastUtilized[0].workspaceName).toBe("Quiet Room");
   });
 
+  it("succeeds without a locationId filter (reports.repository.js param binding)", async () => {
+    const { cookie } = await createUserAndSignIn({ role: "admin" });
+    const location = await seedLocation();
+    const workspace = await seedWorkspace({ locationId: location.id });
+    await seedBooking({
+      workspaceId: workspace.id,
+      bookingDate: FROM,
+      startTime: "09:00",
+      endTime: "11:00",
+    });
+
+    const res = await request(app)
+      .get(`/api/v1/admin/reports/occupancy?from=${FROM}&to=${TO}`)
+      .set("Cookie", cookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.byWorkspace.some((row) => row.workspaceId === workspace.id)).toBe(true);
+  });
+
   it("rejects a range over 366 days (422)", async () => {
     const { cookie } = await createUserAndSignIn({ role: "admin" });
     const res = await request(app)

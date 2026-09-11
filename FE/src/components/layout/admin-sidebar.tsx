@@ -8,7 +8,6 @@ import {
   CreditCard,
   Wifi,
   BarChart3,
-  Bell,
   Settings,
   ExternalLink,
   X,
@@ -63,7 +62,6 @@ export const ADMIN_NAV_GROUPS: NavGroup[] = [
     label: "Insights",
     items: [
       { href: "/admin/analytics", icon: BarChart3, label: "Analytics" },
-      { href: "/admin/notifications", icon: Bell, label: "Notifications" },
       { href: "/admin/settings", icon: Settings, label: "Settings" },
     ],
   },
