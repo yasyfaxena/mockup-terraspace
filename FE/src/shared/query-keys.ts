@@ -7,4 +7,19 @@ export const queryKeys = {
   health: {
     all: () => ["health"] as const,
   },
+  locations: {
+    all: () => ["locations"] as const,
+    list: (params?: unknown) => ["locations", "list", params ?? {}] as const,
+    detail: (slug: string) => ["locations", "detail", slug] as const,
+  },
+  workspaces: {
+    all: () => ["workspaces"] as const,
+    list: (params?: unknown) => ["workspaces", "list", params ?? {}] as const,
+    detail: (id: string) => ["workspaces", "detail", id] as const,
+    availability: (id: string, date: string) => ["workspaces", "availability", id, date] as const,
+  },
+  amenities: {
+    all: () => ["amenities"] as const,
+    list: (params?: unknown) => ["amenities", "list", params ?? {}] as const,
+  },
 } as const;

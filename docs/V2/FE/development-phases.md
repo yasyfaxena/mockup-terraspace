@@ -135,20 +135,26 @@ Implementation plan derived from the V2/FE specification. Phased to track [BE `d
 
 ---
 
-## Phase 3 — Catalog (read)
+## Phase 3 — Catalog (read) ✅ done
 
 **Goal:** the public site browses locations, workspaces and amenities from the V2 API.
 
-### Build
+**What shipped:** `features/locations/`, `features/workspaces/`, `features/amenities/` — each with `*.types.ts` mirroring the real BE DTOs (pulled straight from `locations.mapper.js`/`workspaces.mapper.js`/`amenities.mapper.js`, not guessed), `*.api.ts`, `*.queries.ts` (exporting both `use*` hooks and `*QueryOptions` factories — see below), and real components (`location-card.tsx`, `location-map.tsx`, `workspace-card.tsx`, `availability-badge.tsx` extended to the real 5-state workspace enum plus locations' 3-state computed stat, `search-module.tsx` trimmed to the two filters that map to real query params, `amenity-chip.tsx`, `availability-calendar.tsx`). `shared/format.ts`, `shared/query-string.ts` (repeated-key query strings, matching BE's `repeatableQueryParam`), and `shared/geocoding.ts` (ported from `src/lib/geocoding.ts`) added. Wired into real routes: `/`, `/locations`, `/locations/$slug`, `/workspaces`, `/workspaces/$id`, `/amenities` all replace their Phase 1 placeholders with live data.
 
-`features/locations/`, `features/workspaces/`, `features/amenities/` — read paths only, per [`features/locations.md`](./features/locations.md), [`features/workspaces.md`](./features/workspaces.md), [`features/amenities.md`](./features/amenities.md).
+**A gap found only by testing against a real browser-shaped request, not by reading the docs:** every route above rendered nothing but its loading skeleton over SSR/`curl` at first — `useQuery` alone never has data yet on the server, since nothing had prefetched it. Fixed by having each feature's `*.queries.ts` also export a `*QueryOptions()` factory (via `queryOptions()`) that both the `use*` hook and the owning route's `loader` call with `queryClient.ensureQueryData(...)`, exactly as `fe-architecture.md` §8 already specified — Phase 3 is what actually exercises that pattern for the first time. A related fix: a BE `404 NOT_FOUND` from a loader was surfacing as an unhandled SSR `500`, not the router's `notFoundComponent` — `locations.$slug.tsx`/`workspaces.$id.tsx` now catch `ApiError` with `code === "NOT_FOUND"` and `throw notFound()` instead (`error-handling.md` §5), and `__root.tsx` gained a real `notFoundComponent` (Phase 1 never added one).
+
+**Scope actually delivered vs. what a literal reading might imply:**
+- Locations has no pagination on the BE at all (`listPublic` returns `{ data }`, no `meta` — few locations exist by design). Only `/workspaces` is truly paginated (`page`/`limit`/`meta.totalPages`); "no load-everything-and-filter-in-JS" is satisfied for both (locations' filters — `city`/`q`/`amenityId` — are real server-side query params too), but only one of them has pages to turn.
+- The workspace detail page's availability calendar is a real, working hour-grid (dynamic opening-hours bounds from the API response, not V1's hardcoded 8am–5pm) but simpler than V1's pixel-precise Google-Calendar-style rendering — booking-slot selection and the booking form itself are Phase 5, not this phase.
+- The 5 static marketing pages (pricing/how-it-works/help/terms/privacy) are still Phase 1's placeholders — untouched here, still open.
+- The homepage got a real hero + `SearchModule` + a 3-location teaser, not the full ~380-line marketing page V1 ships — same "design system vs. content" scope line drawn in Phase 1.
 
 ### Exit criteria
 
-- [ ] `/locations` and `/workspaces` render paginated results — no client-side "load everything and filter in JS" left over from `getPublicCatalog`
-- [ ] Money renders via `shared/format.ts`'s `Intl.NumberFormat("id-ID")` — never a raw string concatenation with "Rp"
-- [ ] Availability calendar reads free/busy intervals from `GET /workspaces/:id/availability` — no booking id, reference or customer name ever reaches a component prop (matches the BE's own leak check in [BE `development-phases.md`](../BE/development-phases.md) Phase 3)
-- [ ] Every list view has a loading skeleton and an empty state — not a blank screen
+- [x] `/locations` and `/workspaces` render paginated results — no client-side "load everything and filter in JS" left over from `getPublicCatalog`. Verified against a real running `BE/` (3 seeded locations, 11 workspaces): `curl` on every route shows real names/prices/addresses server-rendered, not skeletons
+- [x] Money renders via `shared/format.ts`'s `Intl.NumberFormat("id-ID")` — never a raw string concatenation with "Rp"
+- [x] Availability calendar reads free/busy intervals from `GET /workspaces/:id/availability` — no booking id, reference or customer name ever reaches a component prop. Structurally guaranteed, not just by convention: the BE endpoint's `busy`/`available` arrays are `{ from, to }` only, and `workspaces.types.ts`'s `AvailabilityInterval` type has no other fields to leak
+- [x] Every list view has a loading skeleton and an empty state — not a blank screen (all three catalog list views, including a `/amenities` empty-state that wasn't there in the first pass)
 
 ---
 

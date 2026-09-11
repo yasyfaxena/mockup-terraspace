@@ -22,7 +22,9 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AdminLoginRouteImport } from './routes/admin_.login'
 import { Route as LocationsIndexRouteImport } from './routes/locations.index'
+import { Route as LocationsSlugRouteImport } from './routes/locations.$slug'
 import { Route as WorkspacesIndexRouteImport } from './routes/workspaces.index'
+import { Route as WorkspacesIdRouteImport } from './routes/workspaces.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -89,9 +91,19 @@ const LocationsIndexRoute = LocationsIndexRouteImport.update({
   path: '/locations/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocationsSlugRoute = LocationsSlugRouteImport.update({
+  id: '/locations/$slug',
+  path: '/locations/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorkspacesIndexRoute = WorkspacesIndexRouteImport.update({
   id: '/workspaces/',
   path: '/workspaces/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspacesIdRoute = WorkspacesIdRouteImport.update({
+  id: '/workspaces/$id',
+  path: '/workspaces/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -108,6 +120,8 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/locations/$slug': typeof LocationsSlugRoute
+  '/workspaces/$id': typeof WorkspacesIdRoute
   '/locations/': typeof LocationsIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
 }
@@ -124,6 +138,8 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/locations/$slug': typeof LocationsSlugRoute
+  '/workspaces/$id': typeof WorkspacesIdRoute
   '/locations': typeof LocationsIndexRoute
   '/workspaces': typeof WorkspacesIndexRoute
 }
@@ -141,6 +157,8 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/admin_/login': typeof AdminLoginRoute
+  '/locations/$slug': typeof LocationsSlugRoute
+  '/workspaces/$id': typeof WorkspacesIdRoute
   '/locations/': typeof LocationsIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
 }
@@ -159,6 +177,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/terms'
     | '/admin/login'
+    | '/locations/$slug'
+    | '/workspaces/$id'
     | '/locations/'
     | '/workspaces/'
   fileRoutesByTo: FileRoutesByTo
@@ -175,6 +195,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/terms'
     | '/admin/login'
+    | '/locations/$slug'
+    | '/workspaces/$id'
     | '/locations'
     | '/workspaces'
   id:
@@ -191,6 +213,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/terms'
     | '/admin_/login'
+    | '/locations/$slug'
+    | '/workspaces/$id'
     | '/locations/'
     | '/workspaces/'
   fileRoutesById: FileRoutesById
@@ -208,6 +232,8 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   TermsRoute: typeof TermsRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  LocationsSlugRoute: typeof LocationsSlugRoute
+  WorkspacesIdRoute: typeof WorkspacesIdRoute
   LocationsIndexRoute: typeof LocationsIndexRoute
   WorkspacesIndexRoute: typeof WorkspacesIndexRoute
 }
@@ -305,11 +331,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocationsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/locations/$slug': {
+      id: '/locations/$slug'
+      path: '/locations/$slug'
+      fullPath: '/locations/$slug'
+      preLoaderRoute: typeof LocationsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/workspaces/': {
       id: '/workspaces/'
       path: '/workspaces'
       fullPath: '/workspaces/'
       preLoaderRoute: typeof WorkspacesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspaces/$id': {
+      id: '/workspaces/$id'
+      path: '/workspaces/$id'
+      fullPath: '/workspaces/$id'
+      preLoaderRoute: typeof WorkspacesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -328,6 +368,8 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   TermsRoute: TermsRoute,
   AdminLoginRoute: AdminLoginRoute,
+  LocationsSlugRoute: LocationsSlugRoute,
+  WorkspacesIdRoute: WorkspacesIdRoute,
   LocationsIndexRoute: LocationsIndexRoute,
   WorkspacesIndexRoute: WorkspacesIndexRoute,
 }
