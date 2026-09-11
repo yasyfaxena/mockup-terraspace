@@ -36,4 +36,10 @@ export const queryKeys = {
   settings: {
     public: () => ["settings", "public"] as const,
   },
+  payments: {
+    methods: (provider?: string) => ["payments", "methods", provider ?? "xendit"] as const,
+    status: (reference: string) => ["payments", "status", reference] as const,
+    adminList: (params?: unknown) => ["payments", "admin-list", params ?? {}] as const,
+    adminDetail: (id: string) => ["payments", "admin-detail", id] as const,
+  },
 } as const;

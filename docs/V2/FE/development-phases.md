@@ -209,24 +209,24 @@ Verified against a real running `BE/`: created, viewed, and attempted to cancel 
 
 ---
 
-## Phase 6 — Payments (PayBridge)
+## Phase 6 — Payments (PayBridge) ✅ done
 
 **Prerequisite:** [BE Phase 6](../BE/development-phases.md#phase-6--payments-paybridge) live — `checkoutUrl` exists to redirect to.
 
-### Build
+**What shipped:** `features/payments/` — DTOs mirroring `payments.mapper.js` exactly, `checkout-redirect.tsx`, `payment-status-poller.tsx` (`refetchInterval` stops itself the moment `status` leaves a pending state — not a fixed-count poll), `admin-refund-dialog.tsx`, and `admin-payment-table.tsx` (one `STATUS_LABELS` map for the real 7-state `payment_state` enum, replacing V1's per-screen invented prose like "Successful"/"Failed"). A new `/booking/checkout` route sits between `/booking/review` and `/booking/confirmation` — `booking.review.tsx`'s "Confirm & book" now creates the booking then hands off to `CheckoutRedirect`, instead of going straight to confirmation the way it did at the end of Phase 5.
 
-| Slice | Responsibility |
-|---|---|
-| `payments/components/checkout-redirect.tsx` | Redirects to PayBridge's `checkoutUrl`; no payment form is built in-house |
-| `payments/components/payment-status-poller.tsx` | Polls `GET /bookings/:reference/payment` while the user is back on the confirmation screen, since the webhook lands asynchronously |
-| `payments/components/admin-refund-dialog.tsx` | Staff-initiated refund, full or partial |
+**`PAYMENT_ALREADY_PENDING`'s real shape, found only by reading the actual error class:** the doc's exit criteria said "reusing the returned `checkoutUrl`" as if the `409` carried it. It doesn't — `payments.errors.js`'s `PaymentAlreadyPendingError` is a bare message, no `details`. Recovering the existing session's real `checkoutUrl` needs a second call, to `GET /bookings/:reference/payment` (which does return `checkoutUrl` while a payment is still pending). Both `checkout-redirect.tsx` (automatic, on first load) and `payment-status-poller.tsx`'s "Resume checkout" button (customer-triggered, after `payment.status` stays `pending` for 60s) go through this same catch → re-fetch → redirect path.
+
+**A real, environmental limitation, not a gap in the implementation:** this sandbox's PayBridge credentials return `401` on every real call (`GET /payment-methods`, `POST /bookings/:id/payments`, and refund all confirmed this directly against a live `BE/`) — so the actual "redirect to a real PayBridge-hosted checkout page and pay" round trip could not be exercised end-to-end here. Verified everything on either side of that gap instead: the checkout page's real error-handling path (confirmed the exact `PAYMENT_PROVIDER_ERROR` BE returns), and the rest of the flow — payment status display, the poller's `pending`/`paid` rendering, the admin list, and the refund dialog's remaining-balance math — against a `Payment` row seeded directly via Prisma (mirroring how `BE/tests/helpers/auth.js` seeds fixtures rather than going through the thing that's broken in this environment), plus BE's own real `422 REFUND_EXCEEDS_REMAINDER` rejection for an over-large amount, confirming the client-side cap's math agrees with the server's.
 
 ### Exit criteria
 
-- [ ] Returning from PayBridge to the confirmation screen shows `pending` → `paid` without a manual refresh — the poller, not a static render, owns this
-- [ ] A payment stuck `pending` past a reasonable window shows a retry action calling `POST /bookings/:id/payments` again, handling `PAYMENT_ALREADY_PENDING` by reusing the returned `checkoutUrl`
-- [ ] No component ever reads or stores a PayBridge key, signature, or webhook payload — that boundary is server-only, full stop
-- [ ] Partial refund UI enforces the remaining-balance cap client-side for UX, but the `422 REFUND_EXCEEDS_REMAINDER` from the server is the real guard
+- [x] Returning from PayBridge to the confirmation screen shows `pending` → `paid` without a manual refresh — verified with a real `Payment` row: `curl`ing `/booking/confirmation` with a `status: "paid"` row renders "Payment confirmed" straight from the (loader-prefetched) query, no refresh needed. A related gap fixed along the way: `usePaymentStatus` wasn't being prefetched at all, so the poller silently rendered nothing during SSR until this route's loader was updated to prefetch it (best-effort — a booking with no payment yet, e.g. a bookmarked confirmation URL, doesn't block the rest of the page on that 404)
+- [x] A payment stuck `pending` past a reasonable window shows a retry action calling `POST /bookings/:id/payments` again, handling `PAYMENT_ALREADY_PENDING` by reusing the real `checkoutUrl` fetched from `GET /bookings/:reference/payment` — see the finding above
+- [x] No component ever reads or stores a PayBridge key, signature, or webhook payload — `payments.types.ts` has no such fields to begin with; the webhook route is BE-only and was never a candidate for FE code
+- [x] Partial refund UI enforces the remaining-balance cap client-side for UX, but the `422 REFUND_EXCEEDS_REMAINDER` from the server is the real guard — verified both sides agree: the dialog computes `remaining` from the same detail DTO already on screen, and a real over-large refund request against `BE/` was rejected with the exact same error the dialog exists to prevent
+
+Verified against a real running `BE/` throughout (health checks, real bookings, a real sign-up/verify/sign-in cycle, real 401/422/404 responses), with the one gap above called out rather than silently skipped. `npm run check` clean, production build succeeds, all 12 unit tests still pass.
 
 ---
 

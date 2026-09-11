@@ -55,7 +55,10 @@ function BookingReviewPage() {
         startTime: search.start,
         endTime: search.end,
       });
-      await navigate({ to: "/booking/confirmation", search: { reference: booking.reference } });
+      await navigate({
+        to: "/booking/checkout",
+        search: { bookingId: booking.id, reference: booking.reference },
+      });
     } catch (error) {
       // The real message ("This time slot was just booked.") already shows
       // via the query-client's global toast handler — this just re-fetches

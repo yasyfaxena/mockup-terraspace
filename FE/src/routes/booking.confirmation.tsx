@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api-client";
 import { requireAuth } from "@/features/auth";
 import { bookingDetailQueryOptions, QrPass, useBooking } from "@/features/bookings";
+import { paymentStatusQueryOptions, PaymentStatusPoller } from "@/features/payments";
 import { formatMoney } from "@/shared/format";
 
 const confirmationSearchSchema = z.object({ reference: z.string() });
@@ -22,6 +23,13 @@ export const Route = createFileRoute("/booking/confirmation")({
       if (error instanceof ApiError && error.code === "NOT_FOUND") throw notFound();
       throw error;
     }
+    // Best-effort: a booking can genuinely have no payment yet (the
+    // customer bookmarked this URL before finishing checkout) — that 404
+    // shouldn't block the rest of the page, only the poller has nothing
+    // to show client-side.
+    await queryClient
+      .ensureQueryData(paymentStatusQueryOptions(deps.reference))
+      .catch(() => undefined);
   },
   component: BookingConfirmationPage,
 });
@@ -54,6 +62,10 @@ function BookingConfirmationPage() {
           </div>
         </div>
 
+        <div className="mt-4">
+          <PaymentStatusPoller bookingId={booking.id} reference={booking.reference} />
+        </div>
+
         <div className="mt-6 grid gap-6 sm:grid-cols-[220px_1fr]">
           <div className="flex flex-col items-center gap-2">
             <QrPass value={booking.accessCode} />
@@ -83,7 +95,7 @@ function BookingConfirmationPage() {
               <Wifi className="size-3.5 text-primary" /> High-speed Wi-Fi included.
             </div>
             <div className="flex justify-between border-t border-border pt-3 text-sm">
-              <span className="text-muted-foreground">Total paid</span>
+              <span className="text-muted-foreground">Total</span>
               <span className="font-bold text-foreground">{formatMoney(booking.totalAmount)}</span>
             </div>
           </div>

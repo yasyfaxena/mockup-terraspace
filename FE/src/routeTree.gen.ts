@@ -33,6 +33,7 @@ import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminWorkspacesRouteImport } from './routes/admin.workspaces'
 import { Route as AdminLoginRouteImport } from './routes/admin_.login'
+import { Route as BookingCheckoutRouteImport } from './routes/booking.checkout'
 import { Route as BookingConfirmationRouteImport } from './routes/booking.confirmation'
 import { Route as BookingReviewRouteImport } from './routes/booking.review'
 import { Route as LocationsIndexRouteImport } from './routes/locations.index'
@@ -160,6 +161,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BookingCheckoutRoute = BookingCheckoutRouteImport.update({
+  id: '/booking/checkout',
+  path: '/booking/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BookingConfirmationRoute = BookingConfirmationRouteImport.update({
   id: '/booking/confirmation',
   path: '/booking/confirmation',
@@ -215,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/workspaces': typeof AdminWorkspacesRoute
   '/admin/login': typeof AdminLoginRoute
+  '/booking/checkout': typeof BookingCheckoutRoute
   '/booking/confirmation': typeof BookingConfirmationRoute
   '/booking/review': typeof BookingReviewRoute
   '/locations/$slug': typeof LocationsSlugRoute
@@ -246,6 +253,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/workspaces': typeof AdminWorkspacesRoute
   '/admin/login': typeof AdminLoginRoute
+  '/booking/checkout': typeof BookingCheckoutRoute
   '/booking/confirmation': typeof BookingConfirmationRoute
   '/booking/review': typeof BookingReviewRoute
   '/locations/$slug': typeof LocationsSlugRoute
@@ -279,6 +287,7 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/workspaces': typeof AdminWorkspacesRoute
   '/admin_/login': typeof AdminLoginRoute
+  '/booking/checkout': typeof BookingCheckoutRoute
   '/booking/confirmation': typeof BookingConfirmationRoute
   '/booking/review': typeof BookingReviewRoute
   '/locations/$slug': typeof LocationsSlugRoute
@@ -313,6 +322,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/workspaces'
     | '/admin/login'
+    | '/booking/checkout'
     | '/booking/confirmation'
     | '/booking/review'
     | '/locations/$slug'
@@ -344,6 +354,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/workspaces'
     | '/admin/login'
+    | '/booking/checkout'
     | '/booking/confirmation'
     | '/booking/review'
     | '/locations/$slug'
@@ -376,6 +387,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/workspaces'
     | '/admin_/login'
+    | '/booking/checkout'
     | '/booking/confirmation'
     | '/booking/review'
     | '/locations/$slug'
@@ -398,6 +410,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   TermsRoute: typeof TermsRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  BookingCheckoutRoute: typeof BookingCheckoutRoute
   BookingConfirmationRoute: typeof BookingConfirmationRoute
   BookingReviewRoute: typeof BookingReviewRoute
   LocationsSlugRoute: typeof LocationsSlugRoute
@@ -576,6 +589,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/booking/checkout': {
+      id: '/booking/checkout'
+      path: '/booking/checkout'
+      fullPath: '/booking/checkout'
+      preLoaderRoute: typeof BookingCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/booking/confirmation': {
       id: '/booking/confirmation'
       path: '/booking/confirmation'
@@ -666,6 +686,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   TermsRoute: TermsRoute,
   AdminLoginRoute: AdminLoginRoute,
+  BookingCheckoutRoute: BookingCheckoutRoute,
   BookingConfirmationRoute: BookingConfirmationRoute,
   BookingReviewRoute: BookingReviewRoute,
   LocationsSlugRoute: LocationsSlugRoute,
