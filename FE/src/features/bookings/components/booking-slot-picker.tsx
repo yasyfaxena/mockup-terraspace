@@ -72,7 +72,7 @@ export function BookingSlotPicker({
       </div>
 
       {!isValidDuration && (
-        <p className="text-xs text-destructive">
+        <p role="alert" className="text-xs text-destructive">
           Minimum booking length is {minimumDurationMinutes} minutes.
         </p>
       )}

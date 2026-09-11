@@ -54,15 +54,22 @@ export function CheckoutRedirect({
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-6 text-center">
+      <div
+        role="alert"
+        className="rounded-2xl border border-destructive/30 bg-destructive/10 p-6 text-center"
+      >
         <p className="text-sm text-destructive">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-10 text-center">
-      <Loader2 className="size-6 animate-spin text-primary" />
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-10 text-center"
+    >
+      <Loader2 className="size-6 animate-spin text-primary" aria-hidden="true" />
       <p className="text-sm text-muted-foreground">Redirecting to PayBridge checkout…</p>
     </div>
   );

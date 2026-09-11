@@ -48,17 +48,26 @@ export function PaymentStatusPoller({
 
   if (payment.status === "paid") {
     return (
-      <p className="flex items-center gap-2 rounded-xl border border-success/30 bg-success/10 px-4 py-2.5 text-sm font-medium text-success">
-        <CheckCircle2 className="size-4" /> Payment confirmed.
+      <p
+        role="status"
+        aria-live="polite"
+        className="flex items-center gap-2 rounded-xl border border-success/30 bg-success/10 px-4 py-2.5 text-sm font-medium text-success"
+      >
+        <CheckCircle2 className="size-4" aria-hidden="true" /> Payment confirmed.
       </p>
     );
   }
 
   if (payment.status === "pending" || payment.status === "awaiting_payment") {
     return (
-      <div className="space-y-2 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning-foreground">
+      <div
+        role="status"
+        aria-live="polite"
+        className="space-y-2 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning-foreground"
+      >
         <p className="flex items-center gap-2">
-          <Clock className="size-4 animate-pulse" /> Waiting for payment confirmation…
+          <Clock className="size-4 animate-pulse" aria-hidden="true" /> Waiting for payment
+          confirmation…
         </p>
         {stuck && (
           <Button
@@ -67,7 +76,7 @@ export function PaymentStatusPoller({
             className="gap-1.5"
             onClick={() => void handleRetry()}
           >
-            <RotateCw className="size-3.5" /> Resume checkout
+            <RotateCw className="size-3.5" aria-hidden="true" /> Resume checkout
           </Button>
         )}
       </div>
@@ -75,7 +84,10 @@ export function PaymentStatusPoller({
   }
 
   return (
-    <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
+    <p
+      role="alert"
+      className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm text-destructive"
+    >
       Payment {payment.status.replace("_", " ")}.
     </p>
   );

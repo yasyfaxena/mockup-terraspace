@@ -116,7 +116,10 @@ function BookingReviewPage() {
             </dl>
 
             {conflict && (
-              <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive"
+              >
                 <AlertTriangle className="mt-0.5 size-4 shrink-0" />
                 <span>
                   This time slot was just booked by someone else.{" "}

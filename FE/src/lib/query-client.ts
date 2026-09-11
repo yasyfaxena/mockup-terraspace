@@ -1,5 +1,6 @@
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/shared/i18n";
 import { ApiError } from "./api-client";
 
 declare module "@tanstack/react-query" {
@@ -14,7 +15,11 @@ function handleApiError(error: unknown) {
     toast.error("Something went wrong.");
     return;
   }
-  toast.error(error.message);
+  // Hardcoded "en" — I18nProvider hardcodes the same locale today (no
+  // working switch yet, error-handling.md §6); this call sits outside the
+  // React tree (the query/mutation cache's own onError), so it can't reach
+  // useI18n() anyway. The catalog itself is locale-complete regardless.
+  toast.error(getErrorMessage(error.code, "en", error.message));
 }
 
 /**

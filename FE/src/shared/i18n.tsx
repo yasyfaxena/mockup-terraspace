@@ -1,6 +1,85 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
+import type { ErrorCode } from "./error-codes";
 
 export type Locale = "en" | "id";
+
+/**
+ * Every `ERROR_CODE` in both languages (error-handling.md §6) — kept
+ * separate from `dict` below on purpose: `dict` is V1's UI-copy carryover
+ * (English only, no working locale switch), while this catalog exists
+ * specifically so a missing translation is a review-blocking finding, not
+ * a silently-shipped English fallback, regardless of whether the rest of
+ * the UI has caught up to real i18n yet.
+ */
+export const errorMessages: Record<Locale, Record<ErrorCode, string>> = {
+  en: {
+    VALIDATION_FAILED: "Some fields need your attention.",
+    UNAUTHENTICATED: "Please log in to continue.",
+    SESSION_EXPIRED: "Your session has expired — please log in again.",
+    FORBIDDEN: "You don't have permission to do that.",
+    NOT_FOUND: "We couldn't find that.",
+    CONFLICT: "That conflicts with something else — please refresh and try again.",
+    RATE_LIMITED: "Too many attempts — please wait a moment and try again.",
+    INTERNAL_ERROR: "Something went wrong on our end. Please try again.",
+    BOOKING_SLOT_TAKEN: "This time slot was just booked.",
+    BOOKING_TOO_FAR_AHEAD: "That date is too far in advance to book.",
+    BOOKING_IN_PAST: "You can't book a time that's already passed.",
+    BOOKING_MIN_DURATION: "That booking is shorter than the minimum allowed duration.",
+    BOOKING_CANCELLATION_WINDOW_CLOSED: "This booking can no longer be cancelled.",
+    BOOKING_ALREADY_CANCELLED: "This booking has already been cancelled.",
+    WORKSPACE_NOT_BOOKABLE: "This workspace isn't available for booking right now.",
+    LOCATION_INACTIVE: "This location isn't currently active.",
+    AMENITY_IN_USE: "This amenity is still assigned to a workspace and can't be removed.",
+    EMAIL_ALREADY_EXISTS: "An account with this email already exists.",
+    PAYMENT_ALREADY_PAID: "This booking has already been paid.",
+    PAYMENT_ALREADY_PENDING: "A payment for this booking is already in progress.",
+    PAYMENT_NOT_REFUNDABLE: "This payment can't be refunded.",
+    PAYMENT_CUSTOMER_INCOMPLETE: "Your account is missing details the payment provider needs.",
+    REFUND_EXCEEDS_REMAINDER: "That refund amount is more than what's left to refund.",
+    PAYMENT_PROVIDER_ERROR: "The payment provider is unavailable right now. Please try again.",
+    PAYMENT_PROVIDER_TIMEOUT: "The payment provider took too long to respond. Please try again.",
+  },
+  id: {
+    VALIDATION_FAILED: "Beberapa bidang memerlukan perhatian Anda.",
+    UNAUTHENTICATED: "Silakan masuk untuk melanjutkan.",
+    SESSION_EXPIRED: "Sesi Anda telah berakhir — silakan masuk kembali.",
+    FORBIDDEN: "Anda tidak memiliki izin untuk melakukan itu.",
+    NOT_FOUND: "Kami tidak dapat menemukannya.",
+    CONFLICT: "Itu bertentangan dengan hal lain — silakan muat ulang dan coba lagi.",
+    RATE_LIMITED: "Terlalu banyak percobaan — silakan tunggu sebentar dan coba lagi.",
+    INTERNAL_ERROR: "Terjadi kesalahan di sistem kami. Silakan coba lagi.",
+    BOOKING_SLOT_TAKEN: "Slot waktu ini baru saja dipesan.",
+    BOOKING_TOO_FAR_AHEAD: "Tanggal tersebut terlalu jauh di masa depan untuk dipesan.",
+    BOOKING_IN_PAST: "Anda tidak dapat memesan waktu yang sudah lewat.",
+    BOOKING_MIN_DURATION: "Durasi pemesanan itu lebih pendek dari minimum yang diizinkan.",
+    BOOKING_CANCELLATION_WINDOW_CLOSED: "Pemesanan ini sudah tidak dapat dibatalkan.",
+    BOOKING_ALREADY_CANCELLED: "Pemesanan ini sudah dibatalkan sebelumnya.",
+    WORKSPACE_NOT_BOOKABLE: "Ruang kerja ini belum tersedia untuk dipesan saat ini.",
+    LOCATION_INACTIVE: "Lokasi ini sedang tidak aktif.",
+    AMENITY_IN_USE:
+      "Fasilitas ini masih terpasang pada sebuah ruang kerja dan tidak dapat dihapus.",
+    EMAIL_ALREADY_EXISTS: "Akun dengan email ini sudah terdaftar.",
+    PAYMENT_ALREADY_PAID: "Pemesanan ini sudah dibayar.",
+    PAYMENT_ALREADY_PENDING: "Pembayaran untuk pemesanan ini sedang berlangsung.",
+    PAYMENT_NOT_REFUNDABLE: "Pembayaran ini tidak dapat dikembalikan.",
+    PAYMENT_CUSTOMER_INCOMPLETE:
+      "Akun Anda belum melengkapi data yang dibutuhkan oleh penyedia pembayaran.",
+    REFUND_EXCEEDS_REMAINDER: "Jumlah pengembalian dana itu lebih besar dari sisa yang tersedia.",
+    PAYMENT_PROVIDER_ERROR: "Penyedia pembayaran sedang tidak tersedia. Silakan coba lagi.",
+    PAYMENT_PROVIDER_TIMEOUT: "Penyedia pembayaran tidak merespons tepat waktu. Silakan coba lagi.",
+  },
+};
+
+/**
+ * Looks up a translated string for an `ERROR_CODE`; an unrecognized code
+ * (one BE added that FE hasn't caught up to yet) falls back to the
+ * server's own English `message` rather than a raw key or blank toast —
+ * error-handling.md §6's documented, once-acceptable fallback.
+ */
+export function getErrorMessage(code: string, locale: Locale, fallback: string): string {
+  const table = errorMessages[locale] as Record<string, string>;
+  return table[code] ?? fallback;
+}
 
 // Carried over unchanged from V1 (frontend-spec.md §2): despite the `Locale`
 // union, `dict` below has only an `en` entry and I18nProvider hardcodes

@@ -33,8 +33,19 @@ export function SignInForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" autoComplete="email" {...register("email")} />
-        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+        <Input
+          id="email"
+          type="email"
+          autoComplete="email"
+          aria-invalid={Boolean(errors.email)}
+          aria-describedby={errors.email ? "email-error" : undefined}
+          {...register("email")}
+        />
+        {errors.email && (
+          <p id="email-error" role="alert" className="text-xs text-destructive">
+            {errors.email.message}
+          </p>
+        )}
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="password">Password</Label>
@@ -42,9 +53,15 @@ export function SignInForm() {
           id="password"
           type="password"
           autoComplete="current-password"
+          aria-invalid={Boolean(errors.password)}
+          aria-describedby={errors.password ? "password-error" : undefined}
           {...register("password")}
         />
-        {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+        {errors.password && (
+          <p id="password-error" role="alert" className="text-xs text-destructive">
+            {errors.password.message}
+          </p>
+        )}
       </div>
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? "Signing in…" : "Sign in"}
