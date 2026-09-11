@@ -14,7 +14,7 @@ function AdminLoginPage() {
     <SiteShell>
       <PageHeader title="Admin sign in" description="Staff and admin access only." />
       <div className="container-page max-w-sm pb-16">
-        <SignInForm />
+        <SignInForm redirectTo="/admin/dashboard" />
       </div>
     </SiteShell>
   );

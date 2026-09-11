@@ -7,7 +7,19 @@ import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 import { signInSchema, type SignInInput } from "../auth.schema";
 
-export function SignInForm() {
+/**
+ * `redirectTo` lets `/admin/login` send a successful sign-in to
+ * `/admin/dashboard` instead of the customer account page — a non-staff
+ * user landing there is still bounced to `/` by that route's own
+ * `requireRole("admin")` guard (features/auth.md §6's "redirects if not
+ * staff/admin after sign-in"), so this form doesn't need to know the
+ * user's role itself, just where to send them first.
+ */
+export function SignInForm({
+  redirectTo = "/dashboard",
+}: {
+  redirectTo?: "/dashboard" | "/admin/dashboard";
+}) {
   const navigate = useNavigate();
   const {
     register,
@@ -22,11 +34,11 @@ export function SignInForm() {
       setError("password", { message: error.message ?? "Invalid email or password." });
       return;
     }
-    await navigate({ to: "/dashboard" });
+    await navigate({ to: redirectTo });
   };
 
   const onGoogleSignIn = () => {
-    void authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" });
+    void authClient.signIn.social({ provider: "google", callbackURL: redirectTo });
   };
 
   return (
