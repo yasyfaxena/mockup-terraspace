@@ -55,3 +55,25 @@ export type WorkspaceAvailabilityDto = {
   busy: AvailabilityInterval[];
   available: AvailabilityInterval[];
 };
+
+/** Mirrors BE `workspaces.mapper.js`'s `toAdminWorkspaceDto`. */
+export type AdminWorkspaceDto = {
+  id: string;
+  locationId: string;
+  name: string;
+  type: WorkspaceType;
+  floor: string;
+  pricePerHour: string;
+  availability: WorkspaceAvailability;
+  simpleBooking: boolean;
+  imageUrl: string | null;
+  description: string;
+  cancellationPolicy: string;
+  calendarSyncProvider: string | null;
+  qrProvider: string | null;
+  amenityIds: string[];
+  activeBookingCount: number;
+  location: { id: string; name: string; slug: string };
+  createdAt: string;
+  updatedAt: string;
+};

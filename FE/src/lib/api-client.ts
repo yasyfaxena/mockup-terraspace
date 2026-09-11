@@ -1,3 +1,5 @@
+import { forwardedRequestHeaders } from "@/shared/forwarded-headers";
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 
 export type ApiErrorDetail = { path: string; message: string };
@@ -41,7 +43,11 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...init.headers },
+    headers: {
+      "Content-Type": "application/json",
+      ...forwardedRequestHeaders(),
+      ...init.headers,
+    },
   });
 
   if (!res.ok) {

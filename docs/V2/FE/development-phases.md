@@ -158,20 +158,24 @@ Implementation plan derived from the V2/FE specification. Phased to track [BE `d
 
 ---
 
-## Phase 4 — Catalog (write)
+## Phase 4 — Catalog (write) ✅ done
 
 **Goal:** the admin console manages the catalog through the V2 API.
 
-### Build
+**What shipped:** admin CRUD across all three catalog features — `*.schema.ts` (form-side Zod, mirroring BE's create/update schemas, deliberately without `.default()`: see the in-code comment on why that trips `useForm<T>`'s single generic against `zodResolver`), admin API functions and mutations (`useCreate*`/`useUpdate*`/`useDelete*`, each invalidating that feature's whole query namespace on success), and per-feature `admin-*-table.tsx` (V1's flat list, kept — not the sortable/filterable case `data-table.tsx` exists for) + `admin-*-form.tsx` (a real `Dialog`, not V1's hand-rolled `fixed inset-0` overlay div). The shared widgets split out of the one legacy `admin-form-fields.tsx` exactly as planned: `components/admin-fields/{image-field,db-select-field}.tsx` (business-agnostic) and `features/amenities/components/amenity-multi-select.tsx` (owns real amenity data, exported through that feature's `index.ts` for `locations`/`workspaces` to import).
 
-Admin CRUD screens across the three features, replacing `frontend/admin/admin-{locations,workspaces,amenities}.tsx`. All three forms share widgets today living in one legacy file, `frontend/admin/admin-form-fields.tsx` — this phase splits it: `image-field.tsx` and `db-select-field.tsx` (business-agnostic) move to `components/admin-fields/`, while `AmenityMultiSelect` moves into `features/amenities/components/amenity-multi-select.tsx` and is exported through that feature's `index.ts` for the other two to import (see [`fe-architecture.md`](./fe-architecture.md) §2/§7 for why the split lands there).
+**Decision #6 — real per-page admin routes — actually implemented here, not deferred further:** `admin.tsx` is now a layout route (`AdminShell` + `<Outlet/>`) instead of a single page holding `activeTab` state; `admin.locations.tsx`, `admin.workspaces.tsx`, `admin.amenities.tsx` nest under it with real CRUD, and the other 8 sidebar items (`dashboard`, `bookings`, `calendar`, `members`, `payments`, `analytics`, `notifications`, `settings`) got thin placeholder routes so the *entire* sidebar is real, clickable, deep-linkable navigation — not just the three feature areas this phase owns. `AdminSidebar` and `AdminShell` no longer take `activeTab`/`onTabChange` props at all: active-state comes from `Link`'s own `activeProps` matching, and the top-bar page label is read off the current pathname. "Guests" is dropped from the nav entirely (no V2 destination, per `features/README.md`); "Members" (`features/users`) has no FE phase assigned in this plan yet and is called out as such in its own placeholder rather than silently invented.
+
+**The same SSR-cookie gap Phase 2 found, but general this time:** Phase 2 fixed `authClient.getSession()`; this phase found the same problem in the plain `apiClient` itself — every admin loader hit BE's `requireAuth` middleware and got `401 UNAUTHENTICATED` ("Sign in required.") during SSR, because `lib/api-client.ts`'s `fetch()` had no cookie to forward (`credentials: "include"` only matters for a real browser's cookie jar; SSR's `fetch` runs in Node with no ambient cookies at all). The Phase 2 fix was duplicated inside `auth.hooks.ts` only, which was never going to scale — pulled out into `shared/forwarded-headers.ts` and applied in `lib/api-client.ts` itself, so *every* current and future authenticated loader (bookings, payments, settings, reports included) gets this for free instead of rediscovering it phase by phase.
 
 ### Exit criteria
 
-- [ ] Deleting a location with workspaces shows the `409` message from the API, not a generic failure toast
-- [ ] Renaming a location slug does not require re-selecting workspaces in the UI — confirms the FK-by-id fix from [BE `erd-spec.md`](../BE/erd-spec.md) §9 reached the client
-- [ ] Amenity multi-select writes `amenityIds`, matching the junction-table contract in [`features/amenities.md`](./features/amenities.md) — and is a single component imported by three features, not three copies
-- [ ] The workspace/location image field still accepts either a pasted URL or a local file (converted to a `data:` URI client-side) — V2 has no multipart upload endpoint, so this client-side conversion is not a shortcut to remove (see [`features/workspaces.md`](./features/workspaces.md) §4)
+- [x] Deleting a location with workspaces shows the `409` message from the API, not a generic failure toast — verified directly against `BE/`: `DELETE /api/v1/admin/locations/:id` on TerraSpace Jakarta (5 workspaces) returns `409 CONFLICT — "Location still has workspaces."`; the admin table's delete handler doesn't catch-and-replace this, so the query-client's global `onError` toasts the real message verbatim
+- [x] Renaming a location slug does not require re-selecting workspaces in the UI — structural, not just tested: the workspace form's location field is a `Select` keyed on `locationId` (a real UUID), never `locationSlug` — there is no slug anywhere in the write path for this to break on
+- [x] Amenity multi-select writes `amenityIds`, matching the junction-table contract — and is a single component imported by three features, not three copies. Fixed along the way: V1's version matched by amenity **name**; `amenity-multi-select.tsx` selects by **id**, since name-matching silently breaks the moment two amenities share a name
+- [x] The workspace/location image field still accepts either a pasted URL or a local file (converted to a `data:` URI client-side) — ported byte-for-byte from `admin-form-fields.tsx`'s `ImageField`, unchanged behavior
+
+Verified against a real running `BE/` with real seeded data: signed in as a promoted admin test user, confirmed `/admin` redirects to `/admin/dashboard`, all three CRUD pages render real rows via `curl` (not skeletons — same loader-prefetch pattern as Phase 3), the anonymous guard still redirects to `/login`, and a direct `POST /api/v1/admin/amenities` round-trip matches the exact payload shape `amenityFormSchema` produces. `npm run check` clean, production build succeeds, all 9 unit tests still pass.
 
 ---
 

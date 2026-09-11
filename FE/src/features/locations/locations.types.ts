@@ -49,3 +49,25 @@ export type LocationDetailDto = LocationListItemDto & {
   accessRadiusMeters: number;
   workspaces: LocationWorkspaceSummaryDto[];
 };
+
+/** Mirrors BE `locations.mapper.js`'s `toAdminLocationDto`. */
+export type AdminLocationDto = {
+  id: string;
+  slug: string;
+  name: string;
+  address: string;
+  city: string;
+  imageUrl: string | null;
+  openingHours: string;
+  access247: boolean;
+  description: string;
+  latitude: string | null;
+  longitude: string | null;
+  accessRadiusMeters: number;
+  timezone: string;
+  status: "active" | "inactive";
+  workspaceCount: number;
+  amenityIds: string[];
+  createdAt: string;
+  updatedAt: string;
+};

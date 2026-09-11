@@ -1,11 +1,17 @@
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/query-keys";
 import {
+  createWorkspace,
+  deleteWorkspace,
   getWorkspace,
   getWorkspaceAvailability,
+  listAdminWorkspaces,
   listWorkspaces,
+  updateWorkspace,
+  type ListAdminWorkspacesParams,
   type ListWorkspacesParams,
 } from "./workspaces.api";
+import type { WorkspaceFormInput } from "./workspaces.schema";
 
 /** Shared with route `loader`s via `queryClient.ensureQueryData` (fe-architecture.md §8). */
 export function workspacesListQueryOptions(params: ListWorkspacesParams = {}) {
@@ -29,6 +35,13 @@ export function workspaceAvailabilityQueryOptions(id: string, date: string) {
   });
 }
 
+export function adminWorkspacesListQueryOptions(params: ListAdminWorkspacesParams = {}) {
+  return queryOptions({
+    queryKey: queryKeys.workspaces.adminList(params),
+    queryFn: () => listAdminWorkspaces(params),
+  });
+}
+
 export function useWorkspaces(params: ListWorkspacesParams = {}) {
   return useQuery(workspacesListQueryOptions(params));
 }
@@ -41,5 +54,41 @@ export function useWorkspaceAvailability(id: string, date: string) {
   return useQuery({
     ...workspaceAvailabilityQueryOptions(id, date),
     enabled: Boolean(id) && Boolean(date),
+  });
+}
+
+export function useAdminWorkspaces(params: ListAdminWorkspacesParams = {}) {
+  return useQuery(adminWorkspacesListQueryOptions(params));
+}
+
+function useInvalidateWorkspaces() {
+  const queryClient = useQueryClient();
+  return () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.workspaces.all() });
+  };
+}
+
+export function useCreateWorkspace() {
+  const invalidate = useInvalidateWorkspaces();
+  return useMutation({
+    mutationFn: (input: WorkspaceFormInput) => createWorkspace(input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateWorkspace() {
+  const invalidate = useInvalidateWorkspaces();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Partial<WorkspaceFormInput> }) =>
+      updateWorkspace(id, input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteWorkspace() {
+  const invalidate = useInvalidateWorkspaces();
+  return useMutation({
+    mutationFn: (id: string) => deleteWorkspace(id),
+    onSuccess: invalidate,
   });
 }

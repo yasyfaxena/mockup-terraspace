@@ -20,6 +20,18 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminAmenitiesRouteImport } from './routes/admin.amenities'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
+import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
+import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
+import { Route as AdminLocationsRouteImport } from './routes/admin.locations'
+import { Route as AdminMembersRouteImport } from './routes/admin.members'
+import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
+import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminWorkspacesRouteImport } from './routes/admin.workspaces'
 import { Route as AdminLoginRouteImport } from './routes/admin_.login'
 import { Route as LocationsIndexRouteImport } from './routes/locations.index'
 import { Route as LocationsSlugRouteImport } from './routes/locations.$slug'
@@ -81,6 +93,66 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAmenitiesRoute = AdminAmenitiesRouteImport.update({
+  id: '/amenities',
+  path: '/amenities',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBookingsRoute = AdminBookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCalendarRoute = AdminCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLocationsRoute = AdminLocationsRouteImport.update({
+  id: '/locations',
+  path: '/locations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMembersRoute = AdminMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminWorkspacesRoute = AdminWorkspacesRouteImport.update({
+  id: '/workspaces',
+  path: '/workspaces',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin_/login',
   path: '/admin/login',
@@ -109,7 +181,7 @@ const WorkspacesIdRoute = WorkspacesIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/amenities': typeof AmenitiesRoute
   '/dashboard': typeof DashboardRoute
   '/help': typeof HelpRoute
@@ -119,15 +191,26 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/admin/amenities': typeof AdminAmenitiesRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/calendar': typeof AdminCalendarRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/locations': typeof AdminLocationsRoute
+  '/admin/members': typeof AdminMembersRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/workspaces': typeof AdminWorkspacesRoute
   '/admin/login': typeof AdminLoginRoute
   '/locations/$slug': typeof LocationsSlugRoute
   '/workspaces/$id': typeof WorkspacesIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/locations/': typeof LocationsIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/amenities': typeof AmenitiesRoute
   '/dashboard': typeof DashboardRoute
   '/help': typeof HelpRoute
@@ -137,16 +220,28 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/admin/amenities': typeof AdminAmenitiesRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/calendar': typeof AdminCalendarRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/locations': typeof AdminLocationsRoute
+  '/admin/members': typeof AdminMembersRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/workspaces': typeof AdminWorkspacesRoute
   '/admin/login': typeof AdminLoginRoute
   '/locations/$slug': typeof LocationsSlugRoute
   '/workspaces/$id': typeof WorkspacesIdRoute
+  '/admin': typeof AdminIndexRoute
   '/locations': typeof LocationsIndexRoute
   '/workspaces': typeof WorkspacesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/amenities': typeof AmenitiesRoute
   '/dashboard': typeof DashboardRoute
   '/help': typeof HelpRoute
@@ -156,9 +251,21 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/admin/amenities': typeof AdminAmenitiesRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/calendar': typeof AdminCalendarRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/locations': typeof AdminLocationsRoute
+  '/admin/members': typeof AdminMembersRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/workspaces': typeof AdminWorkspacesRoute
   '/admin_/login': typeof AdminLoginRoute
   '/locations/$slug': typeof LocationsSlugRoute
   '/workspaces/$id': typeof WorkspacesIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/locations/': typeof LocationsIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
 }
@@ -176,15 +283,26 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/signup'
     | '/terms'
+    | '/admin/amenities'
+    | '/admin/analytics'
+    | '/admin/bookings'
+    | '/admin/calendar'
+    | '/admin/dashboard'
+    | '/admin/locations'
+    | '/admin/members'
+    | '/admin/notifications'
+    | '/admin/payments'
+    | '/admin/settings'
+    | '/admin/workspaces'
     | '/admin/login'
     | '/locations/$slug'
     | '/workspaces/$id'
+    | '/admin/'
     | '/locations/'
     | '/workspaces/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/amenities'
     | '/dashboard'
     | '/help'
@@ -194,9 +312,21 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/signup'
     | '/terms'
+    | '/admin/amenities'
+    | '/admin/analytics'
+    | '/admin/bookings'
+    | '/admin/calendar'
+    | '/admin/dashboard'
+    | '/admin/locations'
+    | '/admin/members'
+    | '/admin/notifications'
+    | '/admin/payments'
+    | '/admin/settings'
+    | '/admin/workspaces'
     | '/admin/login'
     | '/locations/$slug'
     | '/workspaces/$id'
+    | '/admin'
     | '/locations'
     | '/workspaces'
   id:
@@ -212,16 +342,28 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/signup'
     | '/terms'
+    | '/admin/amenities'
+    | '/admin/analytics'
+    | '/admin/bookings'
+    | '/admin/calendar'
+    | '/admin/dashboard'
+    | '/admin/locations'
+    | '/admin/members'
+    | '/admin/notifications'
+    | '/admin/payments'
+    | '/admin/settings'
+    | '/admin/workspaces'
     | '/admin_/login'
     | '/locations/$slug'
     | '/workspaces/$id'
+    | '/admin/'
     | '/locations/'
     | '/workspaces/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AmenitiesRoute: typeof AmenitiesRoute
   DashboardRoute: typeof DashboardRoute
   HelpRoute: typeof HelpRoute
@@ -317,6 +459,90 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/amenities': {
+      id: '/admin/amenities'
+      path: '/amenities'
+      fullPath: '/admin/amenities'
+      preLoaderRoute: typeof AdminAmenitiesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bookings': {
+      id: '/admin/bookings'
+      path: '/bookings'
+      fullPath: '/admin/bookings'
+      preLoaderRoute: typeof AdminBookingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/calendar': {
+      id: '/admin/calendar'
+      path: '/calendar'
+      fullPath: '/admin/calendar'
+      preLoaderRoute: typeof AdminCalendarRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/locations': {
+      id: '/admin/locations'
+      path: '/locations'
+      fullPath: '/admin/locations'
+      preLoaderRoute: typeof AdminLocationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/members': {
+      id: '/admin/members'
+      path: '/members'
+      fullPath: '/admin/members'
+      preLoaderRoute: typeof AdminMembersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/notifications': {
+      id: '/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AdminNotificationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/payments': {
+      id: '/admin/payments'
+      path: '/payments'
+      fullPath: '/admin/payments'
+      preLoaderRoute: typeof AdminPaymentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/workspaces': {
+      id: '/admin/workspaces'
+      path: '/workspaces'
+      fullPath: '/admin/workspaces'
+      preLoaderRoute: typeof AdminWorkspacesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin_/login': {
       id: '/admin_/login'
       path: '/admin/login'
@@ -355,9 +581,41 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminAmenitiesRoute: typeof AdminAmenitiesRoute
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminBookingsRoute: typeof AdminBookingsRoute
+  AdminCalendarRoute: typeof AdminCalendarRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminLocationsRoute: typeof AdminLocationsRoute
+  AdminMembersRoute: typeof AdminMembersRoute
+  AdminNotificationsRoute: typeof AdminNotificationsRoute
+  AdminPaymentsRoute: typeof AdminPaymentsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminWorkspacesRoute: typeof AdminWorkspacesRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAmenitiesRoute: AdminAmenitiesRoute,
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminBookingsRoute: AdminBookingsRoute,
+  AdminCalendarRoute: AdminCalendarRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
+  AdminLocationsRoute: AdminLocationsRoute,
+  AdminMembersRoute: AdminMembersRoute,
+  AdminNotificationsRoute: AdminNotificationsRoute,
+  AdminPaymentsRoute: AdminPaymentsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminWorkspacesRoute: AdminWorkspacesRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   AmenitiesRoute: AmenitiesRoute,
   DashboardRoute: DashboardRoute,
   HelpRoute: HelpRoute,

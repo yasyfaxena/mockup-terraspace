@@ -1,23 +1,20 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { AdminShell } from "@/components/layout/admin-shell";
-import type { AdminTab } from "@/components/layout/admin-sidebar";
 import { requireRole } from "@/features/auth";
 
-// Phase 2 proof that requireRole("admin") actually gates this route — real
-// per-page admin routes (admin.dashboard.tsx, admin.bookings.tsx, ...)
-// replacing this single-route/activeTab shell are Phase 4 (decision #6).
+// Layout route: real per-page admin routes (admin.locations.tsx, ...) nest
+// under this one and render into its <Outlet/> (development-phases.md
+// decision #6). beforeLoad here guards every nested /admin/* route too —
+// TanStack Router runs a parent's beforeLoad before any child's.
 export const Route = createFileRoute("/admin")({
   beforeLoad: () => requireRole("admin"),
-  component: AdminPage,
+  component: AdminLayout,
 });
 
-function AdminPage() {
-  const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
-
+function AdminLayout() {
   return (
-    <AdminShell activeTab={activeTab} onTabChange={setActiveTab}>
-      <p className="text-sm text-white/60">Catalog CRUD lands in Phase 4.</p>
+    <AdminShell>
+      <Outlet />
     </AdminShell>
   );
 }

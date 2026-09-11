@@ -1,10 +1,9 @@
+import { useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { ExternalLink, Menu, Sun, Moon } from "lucide-react";
-import { ADMIN_NAV_GROUPS, AdminSidebar, type AdminTab } from "./admin-sidebar";
+import { ADMIN_NAV_GROUPS, AdminSidebar } from "./admin-sidebar";
 
 interface AdminShellProps {
-  activeTab: AdminTab;
-  onTabChange: (tab: AdminTab) => void;
   children: React.ReactNode;
   notifCount?: number;
   themeMode?: "dark" | "light";
@@ -12,24 +11,23 @@ interface AdminShellProps {
 }
 
 export function AdminShell({
-  activeTab,
-  onTabChange,
   children,
   notifCount = 0,
   themeMode = "dark",
   onToggleTheme,
 }: AdminShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const pageLabel =
-    ADMIN_NAV_GROUPS.flatMap((g) => g.items).find((i) => i.id === activeTab)?.label ?? "Admin";
+    ADMIN_NAV_GROUPS.flatMap((g) => g.items).find((i) => i.href === pathname)?.label ?? "Admin";
   const isLight = themeMode === "light";
 
   return (
     <div data-admin-theme={themeMode} className="min-h-screen bg-[#070b14] text-white flex">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-56 xl:w-60 border-r border-white/[0.06] bg-[#09101f]/90 backdrop-blur-xl shrink-0 h-screen sticky top-0">
-        <AdminSidebar activeTab={activeTab} onTabChange={onTabChange} notifCount={notifCount} />
+        <AdminSidebar notifCount={notifCount} />
       </aside>
 
       {/* Mobile Drawer */}
@@ -40,12 +38,7 @@ export function AdminShell({
             onClick={() => setMobileOpen(false)}
           />
           <aside className="relative z-10 w-60 bg-[#09101f] border-r border-white/[0.08] flex flex-col h-full">
-            <AdminSidebar
-              activeTab={activeTab}
-              onTabChange={onTabChange}
-              notifCount={notifCount}
-              onClose={() => setMobileOpen(false)}
-            />
+            <AdminSidebar notifCount={notifCount} onClose={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}

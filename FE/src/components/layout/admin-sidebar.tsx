@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -5,7 +6,6 @@ import {
   Building2,
   Users,
   CreditCard,
-  Star,
   Wifi,
   BarChart3,
   Bell,
@@ -14,27 +14,11 @@ import {
   X,
   Zap,
   LogOut,
-  ChevronRight,
   CalendarRange,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useSession } from "@/features/auth";
 import { authClient } from "@/lib/auth-client";
 import logoIcon from "@/assets/logo-icon.png";
-
-export type AdminTab =
-  | "dashboard"
-  | "bookings"
-  | "calendar"
-  | "locations"
-  | "spaces"
-  | "members"
-  | "guests"
-  | "payments"
-  | "amenities"
-  | "analytics"
-  | "notifications"
-  | "settings";
 
 interface NavGroup {
   label: string;
@@ -42,65 +26,59 @@ interface NavGroup {
 }
 
 interface NavItem {
-  id: AdminTab | "terraspace";
+  href: string;
   icon: React.FC<{ className?: string }>;
   label: string;
-  external?: boolean;
 }
 
+// "Spaces" is the nav label for the workspaces feature; "Members" maps to
+// features/users (not yet built). "Guests" is dropped — out of scope for V2
+// (README.md's scope decisions).
 export const ADMIN_NAV_GROUPS: NavGroup[] = [
   {
     label: "Operations",
     items: [
-      { id: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
-      { id: "bookings", icon: CalendarDays, label: "Bookings" },
-      { id: "calendar", icon: CalendarRange, label: "Calendar" },
+      { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+      { href: "/admin/bookings", icon: CalendarDays, label: "Bookings" },
+      { href: "/admin/calendar", icon: CalendarRange, label: "Calendar" },
     ],
   },
   {
     label: "Inventory",
     items: [
-      { id: "locations", icon: MapPin, label: "Locations" },
-      { id: "spaces", icon: Building2, label: "Spaces" },
-      { id: "amenities", icon: Wifi, label: "Amenities" },
+      { href: "/admin/locations", icon: MapPin, label: "Locations" },
+      { href: "/admin/workspaces", icon: Building2, label: "Spaces" },
+      { href: "/admin/amenities", icon: Wifi, label: "Amenities" },
     ],
   },
   {
     label: "Customers",
-    items: [
-      { id: "members", icon: Users, label: "Members" },
-      { id: "guests", icon: Star, label: "Guests" },
-    ],
+    items: [{ href: "/admin/members", icon: Users, label: "Members" }],
   },
   {
     label: "Finance",
-    items: [{ id: "payments", icon: CreditCard, label: "Payments" }],
+    items: [{ href: "/admin/payments", icon: CreditCard, label: "Payments" }],
   },
   {
     label: "Insights",
     items: [
-      { id: "analytics", icon: BarChart3, label: "Analytics" },
-      { id: "notifications", icon: Bell, label: "Notifications" },
-      { id: "settings", icon: Settings, label: "Settings" },
+      { href: "/admin/analytics", icon: BarChart3, label: "Analytics" },
+      { href: "/admin/notifications", icon: Bell, label: "Notifications" },
+      { href: "/admin/settings", icon: Settings, label: "Settings" },
     ],
   },
 ];
 
 /**
- * V1's activeTab/onTabChange props — kept as-is for Phase 1. Phase 4 swaps
- * this for real URL-based active-state matching once per-page admin routes
- * exist (development-phases.md decision #6); this file only does the
- * admin-layout.tsx → admin-shell.tsx/admin-sidebar.tsx file split.
+ * Real per-page routes, not V1's activeTab prop (development-phases.md
+ * decision #6) — active state comes from TanStack Router's own `activeProps`
+ * matching, so deep links and the browser back/forward button work natively.
  */
 export function AdminSidebar({
-  activeTab,
-  onTabChange,
-  notifCount,
+  notifCount = 0,
   onClose,
 }: {
-  activeTab: AdminTab;
-  onTabChange: (tab: AdminTab) => void;
-  notifCount: number;
+  notifCount?: number;
   onClose?: () => void;
 }) {
   const { data } = useSession();
@@ -139,38 +117,26 @@ export function AdminSidebar({
               {group.label}
             </p>
             <div className="space-y-0.5">
-              {group.items.map((item) => {
-                const active = activeTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      onTabChange(item.id as AdminTab);
-                      onClose?.();
-                    }}
-                    className={cn(
-                      "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 group relative",
-                      active
-                        ? "bg-gradient-to-r from-[#6366f1]/20 to-[#0ea5e9]/10 text-white border border-[#6366f1]/25"
-                        : "text-white/45 hover:text-white hover:bg-white/[0.05]",
-                    )}
-                  >
-                    <item.icon
-                      className={cn(
-                        "w-3.5 h-3.5 shrink-0",
-                        active ? "text-[#818cf8]" : "text-white/30 group-hover:text-white/60",
-                      )}
-                    />
-                    <span className="flex-1 text-left">{item.label}</span>
-                    {item.id === "notifications" && notifCount > 0 && (
-                      <span className="w-4 h-4 rounded-full bg-[#6366f1] text-[9px] font-bold text-white flex items-center justify-center shrink-0">
-                        {notifCount > 9 ? "9+" : notifCount}
-                      </span>
-                    )}
-                    {active && <ChevronRight className="w-3 h-3 text-[#818cf8]" />}
-                  </button>
-                );
-              })}
+              {group.items.map((item) => (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  onClick={() => onClose?.()}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium text-white/45 transition-all duration-150 hover:bg-white/[0.05] hover:text-white"
+                  activeProps={{
+                    className:
+                      "!text-white !bg-gradient-to-r !from-[#6366f1]/20 !to-[#0ea5e9]/10 !border !border-[#6366f1]/25",
+                  }}
+                >
+                  <item.icon className="size-3.5 shrink-0 text-white/30 group-hover:text-white/60" />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.label === "Notifications" && notifCount > 0 && (
+                    <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-[#6366f1] text-[9px] font-bold text-white">
+                      {notifCount > 9 ? "9+" : notifCount}
+                    </span>
+                  )}
+                </Link>
+              ))}
             </div>
           </div>
         ))}
