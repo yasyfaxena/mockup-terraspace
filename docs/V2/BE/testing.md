@@ -8,13 +8,15 @@
 
 ## 1. Three suites, three jobs
 
-| Suite | Dependencies | Speed | Answers |
-|---|---|---|---|
-| **Unit** | None — repositories faked | ~1 ms | "Is the business rule correct?" |
+| Suite           | Dependencies                   | Speed      | Answers                                             |
+| --------------- | ------------------------------ | ---------- | --------------------------------------------------- |
+| **Unit**        | None — repositories faked      | ~1 ms      | "Is the business rule correct?"                     |
 | **Integration** | Real PostgreSQL + real Express | ~50–500 ms | "Does the whole path work, including the database?" |
-| **Regression** | Real PostgreSQL | ~50–500 ms | "Has this specific bug come back?" |
+| **Regression**  | Real PostgreSQL                | ~50–500 ms | "Has this specific bug come back?"                  |
 
-Regression is separated from integration deliberately. An integration test describes *intended behaviour*; a regression test locks down *a defect that actually shipped*. Mixing them loses that history — and the reason a strange-looking assertion exists gets deleted by someone tidying up.
+Regression is separated from integration deliberately. An integration test describes _intended behaviour_; a regression test locks down _a defect that actually shipped_. Mixing them loses that history — and the reason a strange-looking assertion exists gets deleted by someone tidying up.
+
+> **Deviation from this section, in force since Phase 1 and confirmed again in Phase 8.** In practice every `REG-XXX` check lives inside the feature integration/unit test file it's most related to, tagged `(REG-XXX)` in the `it(...)` name (or, where it's inline with the surrounding scenario, in a comment directly above it) — never in a standalone `tests/regression/` directory. The separate folder shown in §2's tree and referenced in §6's vitest config below was never built; the "separated deliberately" reasoning above still holds — the tag makes a regression test grep-discoverable (`grep -rn "REG-007" tests/`) and non-deletable-by-accident without needing its own directory. All 12 defects (REG-001 through REG-012) are tagged and covered as of Phase 8.
 
 ### What must be an integration test
 
@@ -104,11 +106,11 @@ tests/
 
 ### Naming
 
-| | Convention | Example |
-|---|---|---|
-| Unit | `<source file>.test.js` | `bookings.service.test.js` |
-| Integration | `<use case>.test.js` | `create-booking.test.js` |
-| Regression | `REG-<nnn>-<slug>.test.js` | `REG-001-client-supplied-price.test.js` |
+|             | Convention                 | Example                                 |
+| ----------- | -------------------------- | --------------------------------------- |
+| Unit        | `<source file>.test.js`    | `bookings.service.test.js`              |
+| Integration | `<use case>.test.js`       | `create-booking.test.js`                |
+| Regression  | `REG-<nnn>-<slug>.test.js` | `REG-001-client-supplied-price.test.js` |
 
 > **This replaces the colocated `__tests__/` folders** shown in [`be-architecture.md`](./be-architecture.md) §3. A mirrored tree keeps `src/` free of test files, lets the three suites run independently with different setup costs, and makes "what covers this file?" a path transformation.
 
@@ -129,9 +131,14 @@ import { buildWorkspace, buildSettings } from "@tests/factories";
 function makeService(overrides = {}) {
   const scope = container.createScope();
   scope.register({
-    bookingsRepository: asValue({ create: vi.fn(), findOverlapping: vi.fn().mockResolvedValue([]) }),
-    workspacesService:  asValue({ getBookable: vi.fn().mockResolvedValue(buildWorkspace()) }),
-    settingsService:    asValue({ get: vi.fn().mockResolvedValue(buildSettings({ taxPercent: "11.00" })) }),
+    bookingsRepository: asValue({
+      create: vi.fn(),
+      findOverlapping: vi.fn().mockResolvedValue([]),
+    }),
+    workspacesService: asValue({ getBookable: vi.fn().mockResolvedValue(buildWorkspace()) }),
+    settingsService: asValue({
+      get: vi.fn().mockResolvedValue(buildSettings({ taxPercent: "11.00" })),
+    }),
     ...overrides,
   });
   return scope.resolve("bookingsService");
@@ -145,17 +152,20 @@ describe("bookingsService.create", () => {
       { id: "usr-1", role: "customer" },
     );
 
-    expect(result.subtotalAmount).toBe("150.00");   // 50.00 × 3h
-    expect(result.taxAmount).toBe("16.50");         // 11%
+    expect(result.subtotalAmount).toBe("150.00"); // 50.00 × 3h
+    expect(result.taxAmount).toBe("16.50"); // 11%
     expect(result.totalAmount).toBe("166.50");
   });
 
   it("rejects a booking beyond advanceBookingDays", async () => {
     const service = makeService({
-      settingsService: asValue({ get: vi.fn().mockResolvedValue(buildSettings({ advanceBookingDays: 30 })) }),
+      settingsService: asValue({
+        get: vi.fn().mockResolvedValue(buildSettings({ advanceBookingDays: 30 })),
+      }),
     });
-    await expect(service.create({ /* 60 days out */ }, actor))
-      .rejects.toBeInstanceOf(AdvanceBookingExceededError);
+    await expect(service.create({/* 60 days out */}, actor)).rejects.toBeInstanceOf(
+      AdvanceBookingExceededError,
+    );
   });
 });
 ```
@@ -164,16 +174,16 @@ describe("bookingsService.create", () => {
 
 ### What belongs in unit tests
 
-| Covered | Example |
-|---|---|
-| Price and duration arithmetic | `pricing.service.test.js` |
-| Cancellation-window logic | Frozen clock, boundary either side |
-| Advance-booking / past-date rules | |
-| Free-interval computation | `availability.service.test.js` — pure function over booking rows |
-| Minor-unit conversion | **IDR exponent 0 vs USD exponent 2** |
-| Ed25519 string-to-sign | Exact byte layout, no network |
-| Mapper output | Decimal → string; secrets stripped |
-| Error → status mapping | `error-handler.test.js` |
+| Covered                           | Example                                                          |
+| --------------------------------- | ---------------------------------------------------------------- |
+| Price and duration arithmetic     | `pricing.service.test.js`                                        |
+| Cancellation-window logic         | Frozen clock, boundary either side                               |
+| Advance-booking / past-date rules |                                                                  |
+| Free-interval computation         | `availability.service.test.js` — pure function over booking rows |
+| Minor-unit conversion             | **IDR exponent 0 vs USD exponent 2**                             |
+| Ed25519 string-to-sign            | Exact byte layout, no network                                    |
+| Mapper output                     | Decimal → string; secrets stripped                               |
+| Error → status mapping            | `error-handler.test.js`                                          |
 
 ---
 
@@ -196,8 +206,13 @@ describe("POST /api/v1/bookings", () => {
     const res = await request(buildApp())
       .post("/api/v1/bookings")
       .set("Cookie", agent.cookie)
-      .send({ workspaceId: workspace.id, bookingDate: "2026-09-15",
-              startTime: "09:00", endTime: "12:00", paymentMethod: "card" });
+      .send({
+        workspaceId: workspace.id,
+        bookingDate: "2026-09-15",
+        startTime: "09:00",
+        endTime: "12:00",
+        paymentMethod: "card",
+      });
 
     expect(res.status).toBe(201);
     expect(res.body.totalAmount).toBe("166.50");
@@ -212,7 +227,7 @@ describe("POST /api/v1/bookings", () => {
       .get(`/api/v1/bookings/${booking.reference}`)
       .set("Cookie", agent.cookie);
 
-    expect(res.status).toBe(404);        // 403 would confirm the reference exists
+    expect(res.status).toBe(404); // 403 would confirm the reference exists
     expect(res.body.error.code).toBe("NOT_FOUND");
   });
 });
@@ -309,9 +324,16 @@ it("ignores a client-supplied total and charges the catalog price", async () => 
   const res = await request(buildApp())
     .post("/api/v1/bookings")
     .set("Cookie", agent.cookie)
-    .send({ workspaceId: workspace.id, bookingDate: "2026-09-15",
-            startTime: "09:00", endTime: "12:00", paymentMethod: "card",
-            total: 0, totalAmount: "0.00", unitPrice: "0.00" });   // hostile
+    .send({
+      workspaceId: workspace.id,
+      bookingDate: "2026-09-15",
+      startTime: "09:00",
+      endTime: "12:00",
+      paymentMethod: "card",
+      total: 0,
+      totalAmount: "0.00",
+      unitPrice: "0.00",
+    }); // hostile
 
   expect(res.status).toBe(201);
   expect(res.body.totalAmount).toBe("166.50");
@@ -322,20 +344,20 @@ it("ignores a client-supplied total and charges the catalog price", async () => 
 
 Each derives from a real defect found in `src/backend/api/` or `prisma/schema.prisma`.
 
-| ID | Defect | Asserts |
-|---|---|---|
-| **REG-001** | Client-supplied `total` written unchecked | Hostile amount fields are ignored |
-| **REG-002** | `createBooking` never checked availability | Two overlapping bookings cannot both succeed |
-| **REG-003** | First registered user became `admin` | The first sign-up is `customer` |
-| **REG-004** | Slug collapsed to `""` for punctuation-only input | Rejected with `422`, never persisted |
-| **REG-005** | Renaming a location slug orphaned its workspaces | Rename keeps every workspace attached (FK is `locationId`) |
-| **REG-006** | Disabled workspaces made a location show `$0.00` | `priceFrom` and counts reflect the full catalog |
-| **REG-007** | Desk/room split inferred from `"desk"` in a free-text type | Classification follows the enum, not string matching |
-| **REG-008** | Deleting a user cascade-deleted their bookings | Delete returns `409`; bookings survive |
-| **REG-009** | Deleting an amenity left dangling labels | Delete returns `409 AMENITY_IN_USE` |
-| **REG-010** | Minor-unit conversion | IDR `100000.00` → `100000`; USD `166.50` → `16650` |
-| **REG-011** | Duplicate webhook delivery | Second delivery is a no-op; booking confirmed once, one `payments` row `paid` |
-| **REG-012** | Webhook body re-serialized before verification | Signature verifies against raw bytes; whitespace-altered body → `401` |
+| ID          | Defect                                                     | Asserts                                                                       |
+| ----------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **REG-001** | Client-supplied `total` written unchecked                  | Hostile amount fields are ignored                                             |
+| **REG-002** | `createBooking` never checked availability                 | Two overlapping bookings cannot both succeed                                  |
+| **REG-003** | First registered user became `admin`                       | The first sign-up is `customer`                                               |
+| **REG-004** | Slug collapsed to `""` for punctuation-only input          | Rejected with `422`, never persisted                                          |
+| **REG-005** | Renaming a location slug orphaned its workspaces           | Rename keeps every workspace attached (FK is `locationId`)                    |
+| **REG-006** | Disabled workspaces made a location show `$0.00`           | `priceFrom` and counts reflect the full catalog                               |
+| **REG-007** | Desk/room split inferred from `"desk"` in a free-text type | Classification follows the enum, not string matching                          |
+| **REG-008** | Deleting a user cascade-deleted their bookings             | Delete returns `409`; bookings survive                                        |
+| **REG-009** | Deleting an amenity left dangling labels                   | Delete returns `409 AMENITY_IN_USE`                                           |
+| **REG-010** | Minor-unit conversion                                      | IDR `100000.00` → `100000`; USD `166.50` → `16650`                            |
+| **REG-011** | Duplicate webhook delivery                                 | Second delivery is a no-op; booking confirmed once, one `payments` row `paid` |
+| **REG-012** | Webhook body re-serialized before verification             | Signature verifies against raw bytes; whitespace-altered body → `401`         |
 
 A regression test is **never deleted** when the code it guards is refactored. If it fails after a refactor, either the bug is back or the behaviour changed deliberately — and that decision deserves a conversation, not an edit to the test.
 
@@ -350,7 +372,7 @@ A regression test is **never deleted** when the code it guards is refactored. If
 export async function setup() {
   const container = await new PostgreSqlContainer("postgres:16-alpine").start();
   process.env.DATABASE_URL = container.getConnectionUri();
-  execSync("npx prisma migrate deploy", { env: process.env });   // real migrations
+  execSync("npx prisma migrate deploy", { env: process.env }); // real migrations
   return async () => container.stop();
 }
 ```
@@ -404,7 +426,9 @@ export function buildBooking(overrides = {}) {
 }
 
 /** Persists, creating a workspace + location when not supplied. */
-export async function seedBooking(overrides = {}) { /* … */ }
+export async function seedBooking(overrides = {}) {
+  /* … */
+}
 ```
 
 Prisma generates its own types, so a single JSDoc `@param` gives editor completion on `overrides` without any TypeScript syntax ([`linter.md`](./linter.md) §10).
@@ -454,7 +478,7 @@ export default defineConfig({
           setupFiles: ["tests/setup/integration-setup.js"],
           fileParallelism: false,
           testTimeout: 30_000,
-          hookTimeout: 120_000,     // first run pulls the postgres image
+          hookTimeout: 120_000, // first run pulls the postgres image
         },
       },
     ],
@@ -471,8 +495,8 @@ export default defineConfig({
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
     "test:watch": "vitest --project unit",
-    "test:coverage": "vitest run --coverage"
-  }
+    "test:coverage": "vitest run --coverage",
+  },
 }
 ```
 
@@ -484,14 +508,14 @@ export default defineConfig({
 
 Targets by layer, not one global number.
 
-| Layer | Target | Rationale |
-|---|---|---|
-| `*.service.js` | **90%** | Where the business rules live |
-| `*.mapper.js` | 90% | Cheap to test, and where secrets leak |
-| `shared/errors`, `shared/middleware` | 90% | Every request passes through |
-| `*.controller.js` | 70% | Thin by design |
-| `*.repository.js` | Via integration | Direct unit tests would only assert Prisma call shapes |
-| `*.routes.js` | Via integration | |
+| Layer                                | Target          | Rationale                                              |
+| ------------------------------------ | --------------- | ------------------------------------------------------ |
+| `*.service.js`                       | **90%**         | Where the business rules live                          |
+| `*.mapper.js`                        | 90%             | Cheap to test, and where secrets leak                  |
+| `shared/errors`, `shared/middleware` | 90%             | Every request passes through                           |
+| `*.controller.js`                    | 70%             | Thin by design                                         |
+| `*.repository.js`                    | Via integration | Direct unit tests would only assert Prisma call shapes |
+| `*.routes.js`                        | Via integration |                                                        |
 
 A global gate of 80% is fine as a floor. Chasing 100% produces tests written to touch lines rather than to assert behaviour.
 
@@ -501,16 +525,16 @@ A global gate of 80% is fine as a floor. Chasing 100% produces tests written to 
 
 ## 11. What not to do
 
-| Anti-pattern | Instead |
-|---|---|
-| Mocking Prisma to test a repository | Integration test against the real database |
-| Asserting on error **messages** | Assert the error class or `error.code` |
-| One test asserting eight things | One behaviour per test; the name states it |
-| Sequential `await` for a concurrency test | `Promise.all` — sequential calls prove nothing about races |
-| `db push` in test setup | `migrate deploy` — constraints must match production |
-| Shared mutable state between tests | `resetDb()` in `beforeEach` |
-| Deleting a regression test during a refactor | Investigate the failure; the bug may be back |
-| Unseeded `faker` | `faker.seed()` — failures must reproduce |
+| Anti-pattern                                 | Instead                                                    |
+| -------------------------------------------- | ---------------------------------------------------------- |
+| Mocking Prisma to test a repository          | Integration test against the real database                 |
+| Asserting on error **messages**              | Assert the error class or `error.code`                     |
+| One test asserting eight things              | One behaviour per test; the name states it                 |
+| Sequential `await` for a concurrency test    | `Promise.all` — sequential calls prove nothing about races |
+| `db push` in test setup                      | `migrate deploy` — constraints must match production       |
+| Shared mutable state between tests           | `resetDb()` in `beforeEach`                                |
+| Deleting a regression test during a refactor | Investigate the failure; the bug may be back               |
+| Unseeded `faker`                             | `faker.seed()` — failures must reproduce                   |
 
 ---
 

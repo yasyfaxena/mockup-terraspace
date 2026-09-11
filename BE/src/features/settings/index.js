@@ -1,2 +1,3 @@
 export { settingsService, SettingsService } from "./settings.service.js";
 export { publicSettingsRouter, adminSettingsRouter } from "./settings.routes.js";
+export { updateSettingsSchema } from "./settings.schema.js";

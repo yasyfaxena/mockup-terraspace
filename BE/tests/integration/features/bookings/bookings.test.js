@@ -12,10 +12,26 @@ const FUTURE_DATE = "2026-09-15";
 
 /** Local-clock parts for a booking starting `minutesFromNow` minutes away, at a UTC-timezone location. */
 function soonBookingParts(minutesFromNow, durationMinutes = 60) {
-  const start = new Date(Date.now() + minutesFromNow * 60 * 1000);
-  const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+  let start = new Date(Date.now() + minutesFromNow * 60 * 1000);
+  let end = new Date(start.getTime() + durationMinutes * 60 * 1000);
   const toHHMM = (d) => d.toISOString().slice(11, 16);
   const toYMD = (d) => d.toISOString().slice(0, 10);
+
+  // A booking can't span midnight — bookingDate is one calendar day. A
+  // run within `durationMinutes` of UTC midnight would otherwise produce
+  // endTime < startTime on the same date, which the exclusion
+  // constraint's range rejects outright. Shift the whole window earlier
+  // so it lands strictly within `start`'s original day — landing `end`
+  // exactly AT next midnight isn't enough, since toISOString() still
+  // attributes that exact instant to the next calendar day.
+  if (toYMD(end) !== toYMD(start)) {
+    const ONE_MINUTE_MS = 60 * 1000;
+    const nextMidnight = new Date(`${toYMD(end)}T00:00:00.000Z`);
+    const shiftMs = end.getTime() - nextMidnight.getTime() + ONE_MINUTE_MS;
+    start = new Date(start.getTime() - shiftMs);
+    end = new Date(end.getTime() - shiftMs);
+  }
+
   return { bookingDate: toYMD(start), startTime: toHHMM(start), endTime: toHHMM(end) };
 }
 

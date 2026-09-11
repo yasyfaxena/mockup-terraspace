@@ -71,7 +71,7 @@ describe("Admin amenities (amenities.md §2–5)", () => {
     expect(publicRes.body.amenities.map((entry) => entry.name)).toContain("New Name");
   });
 
-  it("returns 409 AMENITY_IN_USE when assigned, deletes cleanly once unused", async () => {
+  it("returns 409 AMENITY_IN_USE when assigned, deletes cleanly once unused (REG-009)", async () => {
     const { cookie } = await createUserAndSignIn({ role: "admin" });
     const amenity = await seedAmenity();
     const workspace = await seedWorkspace();

@@ -10,11 +10,7 @@
     "@better-auth/cli",
     "lint-staged",
     "husky",
-    "@scalar/express-api-reference",
-    "@sentry/node",
     "awilix",
-    "express-rate-limit",
-    "zod-openapi",
     "nock",
     "@types/html-to-text"
   ],

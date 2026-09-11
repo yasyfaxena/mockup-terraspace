@@ -22,6 +22,8 @@ const envSchema = z.object({
   PAYBRIDGE_CALLBACK_URL: z.string().url(),
   PAYBRIDGE_PROVIDER: z.enum(["xendit", "midtrans"]).default("xendit"),
   RESEND_API_KEY: z.string().optional(),
+  /** Optional — Sentry stays off (never throws) when unset, matching every dev/test box (Phase 8). */
+  SENTRY_DSN: z.string().url().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

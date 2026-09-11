@@ -100,7 +100,7 @@ describe("Admin user management (users.md §3–8)", () => {
     expect(res.body.role).toBe("customer");
   });
 
-  it("returns 409 for deleting a user with bookings, and lets ban stand in", async () => {
+  it("returns 409 for deleting a user with bookings, and lets ban stand in (REG-008)", async () => {
     const { cookie } = await createUserAndSignIn({ role: "admin" });
     const { user: customer } = await createUserAndSignIn({ role: "customer" });
     await seedBooking({ userId: customer.id });

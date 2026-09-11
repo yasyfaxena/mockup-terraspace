@@ -42,8 +42,16 @@ function makeService(overrides = {}) {
     },
     ...overrides.auth,
   };
-  const service = new UsersService({ usersRepository: repo, auth });
-  return { service, repo, auth };
+  // Never falls back to the real singleton — that reaches a live Prisma
+  // client whenever this file runs in the same process as the
+  // integration suite (e.g. `vitest run --coverage` with no --project
+  // filter), silently hitting a real, possibly-empty database.
+  const settingsService = {
+    getSettings: vi.fn().mockResolvedValue({ currency: "IDR" }),
+    ...overrides.settingsService,
+  };
+  const service = new UsersService({ usersRepository: repo, auth, settingsService });
+  return { service, repo, auth, settingsService };
 }
 
 describe("UsersService.updateMe", () => {

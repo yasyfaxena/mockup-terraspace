@@ -439,6 +439,18 @@ export class BookingsService {
   async cancelFromPaymentExpiry(id, client) {
     await this.repo.update(id, { status: "cancelled", cancelledAt: new Date() }, client);
   }
+
+  /**
+   * Promotes `confirmed` bookings whose local end time has passed to
+   * `completed` — a terminal state, distinct from `cancelled` (Phase 8's
+   * cron cleanup).
+   * @returns {Promise<{ completed: number }>}
+   */
+  async completeElapsed() {
+    const ids = await this.repo.findConfirmedElapsedIds();
+    const completed = await this.repo.markCompleted(ids);
+    return { completed };
+  }
 }
 
 export const bookingsService = new BookingsService();

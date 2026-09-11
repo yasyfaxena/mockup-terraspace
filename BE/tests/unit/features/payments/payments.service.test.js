@@ -7,9 +7,15 @@ import {
   PaymentCustomerIncompleteError,
   PaymentNotRefundableError,
   RefundExceedsRemainderError,
+  PaymentProviderError,
+  PaymentProviderTimeout,
 } from "../../../../src/features/payments/payments.errors.js";
 import { BookingAlreadyCancelledError } from "../../../../src/features/bookings/index.js";
-import { NotFoundError } from "../../../../src/shared/errors/http-errors.js";
+import {
+  NotFoundError,
+  ProviderError,
+  ProviderTimeout,
+} from "../../../../src/shared/errors/http-errors.js";
 
 function baseBooking(overrides = {}) {
   return {
@@ -56,6 +62,9 @@ function makeService(overrides = {}) {
     updateEvent: vi.fn(),
     findByOrderId: vi.fn(),
     transaction: vi.fn().mockImplementation((run) => run({})),
+    findStalePendingBookings: vi.fn().mockResolvedValue([]),
+    findReplayableEvents: vi.fn().mockResolvedValue([]),
+    findReconcilable: vi.fn().mockResolvedValue([]),
     ...overrides.repo,
   };
   const bookings = {
@@ -271,5 +280,252 @@ describe("PaymentsService.refund", () => {
     expect(repo.update).toHaveBeenCalledWith("pay1", { status: "partially_refunded" });
     expect(dto.payment.status).toBe("partially_refunded");
     expect(dto.payment.remainingAmount).toBe("60000.00");
+  });
+});
+
+describe("PaymentsService.sweepStalePending", () => {
+  it("expires the stale payment and releases the booking for each stale-pending booking", async () => {
+    const { service, repo, bookings } = makeService({
+      repo: {
+        findStalePendingBookings: vi.fn().mockResolvedValue([{ id: "bk1" }, { id: "bk2" }]),
+        findLatestForBooking: vi.fn().mockResolvedValue({ id: "pay1", status: "awaiting_payment" }),
+      },
+    });
+
+    const result = await service.sweepStalePending(30);
+
+    expect(result).toEqual({ swept: 2 });
+    expect(repo.update).toHaveBeenCalledWith("pay1", {
+      status: "expired",
+      expiredAt: expect.any(Date),
+    });
+    expect(bookings.cancelFromPaymentExpiry).toHaveBeenCalledWith("bk1");
+    expect(bookings.cancelFromPaymentExpiry).toHaveBeenCalledWith("bk2");
+  });
+
+  it("releases the booking even when it has no payment at all", async () => {
+    const { service, repo, bookings } = makeService({
+      repo: {
+        findStalePendingBookings: vi.fn().mockResolvedValue([{ id: "bk1" }]),
+        findLatestForBooking: vi.fn().mockResolvedValue(null),
+      },
+    });
+
+    await service.sweepStalePending(30);
+
+    expect(repo.update).not.toHaveBeenCalled();
+    expect(bookings.cancelFromPaymentExpiry).toHaveBeenCalledWith("bk1");
+  });
+
+  it("leaves an already-resolved payment (e.g. paid) untouched", async () => {
+    const { service, repo } = makeService({
+      repo: {
+        findStalePendingBookings: vi.fn().mockResolvedValue([{ id: "bk1" }]),
+        findLatestForBooking: vi.fn().mockResolvedValue({ id: "pay1", status: "paid" }),
+      },
+    });
+
+    await service.sweepStalePending(30);
+
+    expect(repo.update).not.toHaveBeenCalled();
+  });
+
+  it("returns swept: 0 when nothing is stale", async () => {
+    const { service } = makeService();
+    const result = await service.sweepStalePending(30);
+    expect(result).toEqual({ swept: 0 });
+  });
+});
+
+describe("PaymentsService.replayFailedEvents", () => {
+  it("reprocesses a stuck event through the same logic a live webhook would use", async () => {
+    const payment = {
+      id: "pay1",
+      bookingId: "bk1",
+      amountMinor: 166500n,
+      currency: "IDR",
+      status: "pending",
+    };
+    const event = {
+      id: "evt1",
+      rawBody: JSON.stringify({
+        event: "payment_succeeded",
+        orderId: "TSPC-1-3-abc",
+        amount: 166500,
+        currency: "IDR",
+      }),
+    };
+    const { service, repo, bookings } = makeService({
+      repo: {
+        findReplayableEvents: vi.fn().mockResolvedValue([event]),
+        findByOrderId: vi.fn().mockResolvedValue(payment),
+      },
+    });
+
+    const result = await service.replayFailedEvents(5);
+
+    expect(result).toEqual({ replayed: 1 });
+    expect(repo.update).toHaveBeenCalledWith(
+      "pay1",
+      { status: "paid", paidAt: expect.any(Date) },
+      expect.anything(),
+    );
+    expect(bookings.confirmFromPayment).toHaveBeenCalledWith("bk1", expect.anything());
+    expect(repo.updateEvent).toHaveBeenCalledWith(
+      "evt1",
+      expect.objectContaining({ status: "processed" }),
+    );
+  });
+
+  it("marks the event failed again, rather than throwing, when reprocessing itself errors", async () => {
+    const event = { id: "evt1", rawBody: "not valid json" };
+    const { service, repo } = makeService({
+      repo: { findReplayableEvents: vi.fn().mockResolvedValue([event]) },
+    });
+
+    const result = await service.replayFailedEvents(5);
+
+    expect(result).toEqual({ replayed: 1 });
+    expect(repo.updateEvent).toHaveBeenCalledWith(
+      "evt1",
+      expect.objectContaining({ status: "failed" }),
+    );
+  });
+
+  it("returns replayed: 0 when nothing is stuck", async () => {
+    const { service } = makeService();
+    const result = await service.replayFailedEvents(5);
+    expect(result).toEqual({ replayed: 0 });
+  });
+});
+
+describe("PaymentsService.reconcile", () => {
+  it("corrects a payment PayBridge reports as paid but we still show pending", async () => {
+    const payment = {
+      id: "pay1",
+      bookingId: "bk1",
+      paybridgeChargeId: "sess_1",
+      status: "pending",
+    };
+    const { service, repo, bookings, paybridge } = makeService({
+      repo: { findReconcilable: vi.fn().mockResolvedValue([payment]) },
+      paybridge: { getCharge: vi.fn().mockResolvedValue({ status: "paid" }) },
+    });
+
+    const result = await service.reconcile(60);
+
+    expect(result).toEqual({ checked: 1, corrected: 1 });
+    expect(repo.update).toHaveBeenCalledWith("pay1", {
+      status: "paid",
+      paidAt: expect.any(Date),
+    });
+    expect(bookings.confirmFromPayment).toHaveBeenCalledWith("bk1");
+  });
+
+  it("does nothing when PayBridge agrees with our own status", async () => {
+    const payment = { id: "pay1", bookingId: "bk1", paybridgeChargeId: "sess_1", status: "failed" };
+    const { service, repo } = makeService({
+      repo: { findReconcilable: vi.fn().mockResolvedValue([payment]) },
+      paybridge: { getCharge: vi.fn().mockResolvedValue({ status: "failed" }) },
+    });
+
+    const result = await service.reconcile(60);
+
+    expect(result).toEqual({ checked: 1, corrected: 0 });
+    expect(repo.update).not.toHaveBeenCalled();
+  });
+
+  it("skips a payment PayBridge can't currently be reached for, without throwing", async () => {
+    const payment = {
+      id: "pay1",
+      bookingId: "bk1",
+      paybridgeChargeId: "sess_1",
+      status: "pending",
+    };
+    const { service, repo } = makeService({
+      repo: { findReconcilable: vi.fn().mockResolvedValue([payment]) },
+      paybridge: { getCharge: vi.fn().mockRejectedValue(new Error("network blip")) },
+    });
+
+    const result = await service.reconcile(60);
+
+    expect(result).toEqual({ checked: 1, corrected: 0 });
+    expect(repo.update).not.toHaveBeenCalled();
+  });
+
+  it("returns checked: 0 when nothing needs reconciling", async () => {
+    const { service } = makeService();
+    const result = await service.reconcile(60);
+    expect(result).toEqual({ checked: 0, corrected: 0 });
+  });
+});
+
+describe("PaymentsService.listPaymentMethods", () => {
+  // Each test uses its own provider string — `paymentMethodsCache` is
+  // module-level, shared across every PaymentsService instance in this
+  // file, so reusing a key would let one test's cache hit mask another's.
+  it("fetches and caches on a cache miss", async () => {
+    const { service, paybridge } = makeService();
+
+    const result = await service.listPaymentMethods("xendit-miss");
+
+    expect(paybridge.listPaymentMethods).toHaveBeenCalledWith("xendit-miss");
+    expect(result).toEqual({
+      provider: "xendit-miss",
+      data: [{ code: "OVO", name: "OVO", category: "e_wallet" }],
+    });
+  });
+
+  it("serves the cache on a second call, without a second round trip", async () => {
+    const { service, paybridge } = makeService();
+
+    await service.listPaymentMethods("xendit-cache-hit");
+    await service.listPaymentMethods("xendit-cache-hit");
+
+    expect(paybridge.listPaymentMethods).toHaveBeenCalledTimes(1);
+  });
+
+  it("translates a provider timeout into PaymentProviderTimeout", async () => {
+    const { service } = makeService({
+      paybridge: { listPaymentMethods: vi.fn().mockRejectedValue(new ProviderTimeout("slow")) },
+    });
+    await expect(service.listPaymentMethods("midtrans")).rejects.toBeInstanceOf(
+      PaymentProviderTimeout,
+    );
+  });
+
+  it("translates a generic provider error into PaymentProviderError", async () => {
+    const { service } = makeService({
+      paybridge: { listPaymentMethods: vi.fn().mockRejectedValue(new ProviderError("down")) },
+    });
+    await expect(service.listPaymentMethods("ovo-provider")).rejects.toBeInstanceOf(
+      PaymentProviderError,
+    );
+  });
+});
+
+describe("PaymentsService.createCharge — provider failure translation", () => {
+  it("translates a provider timeout from PayBridge's charge creation", async () => {
+    const { service } = makeService({
+      paybridge: { createCharge: vi.fn().mockRejectedValue(new ProviderTimeout("slow")) },
+    });
+    await expect(service.createCharge("u1", "bk1", { provider: "xendit" })).rejects.toBeInstanceOf(
+      PaymentProviderTimeout,
+    );
+  });
+});
+
+describe("PaymentsService.refund — provider failure translation", () => {
+  it("translates a provider error from PayBridge's refund creation", async () => {
+    const { service } = makeService({
+      repo: {
+        findById: vi
+          .fn()
+          .mockResolvedValue({ id: "pay1", status: "paid", amountMinor: 100000n, currency: "IDR" }),
+        sumSucceededRefunds: vi.fn().mockResolvedValue(0n),
+      },
+      paybridge: { createRefund: vi.fn().mockRejectedValue(new ProviderError("down")) },
+    });
+    await expect(service.refund("pay1", {}, "admin1")).rejects.toBeInstanceOf(PaymentProviderError);
   });
 });

@@ -200,4 +200,59 @@ describe("POST /webhooks/paybridge (payments.md §7)", () => {
     const persistedBooking = await prisma.booking.findUnique({ where: { id: booking.id } });
     expect(persistedBooking.status).toBe("cancelled");
   });
+
+  it("a validly-signed but unparseable body is a 200 no-op — never acted on, only logged", async () => {
+    mockPlatformKey();
+    const rawBody = "{not valid json";
+    const headers = signWebhook(rawBody, WEBHOOK_PATH);
+
+    const res = await postWebhook(rawBody, headers);
+
+    expect(res.status).toBe(200);
+  });
+
+  it("an unrecognized event type is ignored rather than acted on", async () => {
+    const { booking, payment } = await seedPendingCharge();
+    mockPlatformKey();
+    const rawBody = chargeBody(payment, "some_future_event_type");
+    const headers = signWebhook(rawBody, WEBHOOK_PATH);
+
+    const res = await postWebhook(rawBody, headers);
+
+    expect(res.status).toBe(200);
+    const persistedPayment = await prisma.payment.findUnique({ where: { id: payment.id } });
+    expect(persistedPayment.status).toBe("pending");
+    const persistedBooking = await prisma.booking.findUnique({ where: { id: booking.id } });
+    expect(persistedBooking.status).toBe("pending");
+    const event = await prisma.paymentEvent.findFirst({
+      where: { paybridgeOrderId: payment.paybridgeOrderId },
+    });
+    expect(event.status).toBe("ignored");
+  });
+
+  it("a genuine processing exception is a 200 no-op — the event is queued failed for replay, not thrown", async () => {
+    const { payment } = await seedPendingCharge();
+    mockPlatformKey();
+    // A non-numeric amount makes BigInt(body.amount) throw mid-processing —
+    // proves an unexpected exception never surfaces as a 5xx to PayBridge,
+    // which would burn its limited retry budget for nothing (payments.md §7).
+    const rawBody = JSON.stringify({
+      event: "payment_succeeded",
+      orderId: payment.paybridgeOrderId,
+      amount: "not-a-number",
+      currency: payment.currency,
+      provider: payment.provider,
+      timestamp: new Date().toISOString(),
+    });
+    const headers = signWebhook(rawBody, WEBHOOK_PATH);
+
+    const res = await postWebhook(rawBody, headers);
+
+    expect(res.status).toBe(200);
+    const event = await prisma.paymentEvent.findFirst({
+      where: { paybridgeOrderId: payment.paybridgeOrderId },
+    });
+    expect(event.status).toBe("failed");
+    expect(event.error).toBeTruthy();
+  });
 });

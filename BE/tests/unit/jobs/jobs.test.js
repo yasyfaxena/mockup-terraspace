@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from "vitest";
 import { runStalePendingSweep } from "../../../src/jobs/stale-pending-sweep.js";
 import { runFailedEventReplay } from "../../../src/jobs/failed-event-replay.js";
 import { runReconciliation } from "../../../src/jobs/reconciliation.js";
+import { runSessionCleanup } from "../../../src/jobs/session-cleanup.js";
+import { runCompleteBookings } from "../../../src/jobs/complete-bookings.js";
 
 const STALE_PENDING_MINUTES = 30;
 const REPLAY_AFTER_MINUTES = 5;
@@ -84,5 +86,57 @@ describe("runReconciliation", () => {
     await runReconciliation({ paymentsService, logger });
 
     expect(logger.warn).not.toHaveBeenCalled();
+  });
+});
+
+describe("runSessionCleanup", () => {
+  it("cleans up expired sessions and verifications and logs the counts", async () => {
+    const authService = {
+      cleanupExpired: vi.fn().mockResolvedValue({ sessions: 4, verifications: 1 }),
+    };
+    const logger = fakeLogger();
+
+    await runSessionCleanup({ authService, logger });
+
+    expect(authService.cleanupExpired).toHaveBeenCalledWith();
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({ sessions: 4, verifications: 1 }),
+      expect.any(String),
+    );
+  });
+
+  it("stays quiet when nothing was expired", async () => {
+    const authService = {
+      cleanupExpired: vi.fn().mockResolvedValue({ sessions: 0, verifications: 0 }),
+    };
+    const logger = fakeLogger();
+
+    await runSessionCleanup({ authService, logger });
+
+    expect(logger.info).not.toHaveBeenCalled();
+  });
+});
+
+describe("runCompleteBookings", () => {
+  it("promotes elapsed confirmed bookings to completed and logs the count", async () => {
+    const bookingsService = { completeElapsed: vi.fn().mockResolvedValue({ completed: 7 }) };
+    const logger = fakeLogger();
+
+    await runCompleteBookings({ bookingsService, logger });
+
+    expect(bookingsService.completeElapsed).toHaveBeenCalledWith();
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({ completed: 7 }),
+      expect.any(String),
+    );
+  });
+
+  it("stays quiet when nothing elapsed", async () => {
+    const bookingsService = { completeElapsed: vi.fn().mockResolvedValue({ completed: 0 }) };
+    const logger = fakeLogger();
+
+    await runCompleteBookings({ bookingsService, logger });
+
+    expect(logger.info).not.toHaveBeenCalled();
   });
 });

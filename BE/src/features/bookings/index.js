@@ -11,3 +11,11 @@ export {
   CancellationWindowClosedError,
   BookingAlreadyCancelledError,
 } from "./bookings.errors.js";
+export {
+  createBookingSchema,
+  createAdminBookingSchema,
+  updateAdminBookingSchema,
+  listBookingsQuerySchema,
+  listAdminBookingsQuerySchema,
+  calendarQuerySchema,
+} from "./bookings.schema.js";

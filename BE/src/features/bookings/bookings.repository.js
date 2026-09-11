@@ -305,4 +305,36 @@ export class BookingsRepository {
   transaction(run) {
     return this.db.$transaction(run);
   }
+
+  /**
+   * `confirmed` bookings whose local end time — `booking_date + end_time`,
+   * interpreted in the workspace's own venue timezone, not the server's —
+   * has already passed. The job that promotes them to `completed`
+   * (Phase 8).
+   * @returns {Promise<string[]>}
+   */
+  async findConfirmedElapsedIds() {
+    const rows = await this.db.$queryRaw`
+      SELECT b.id
+      FROM bookings b
+        JOIN workspaces w ON w.id = b.workspace_id
+        JOIN locations l ON l.id = w.location_id
+      WHERE b.status = 'confirmed'
+        AND (b.booking_date + b.end_time) AT TIME ZONE l.timezone < now()
+    `;
+    return /** @type {Array<{ id: string }>} */ (rows).map((row) => row.id);
+  }
+
+  /**
+   * @param {string[]} ids
+   * @returns {Promise<number>}
+   */
+  async markCompleted(ids) {
+    if (ids.length === 0) return 0;
+    const result = await this.db.booking.updateMany({
+      where: { id: { in: ids } },
+      data: { status: "completed" },
+    });
+    return result.count;
+  }
 }

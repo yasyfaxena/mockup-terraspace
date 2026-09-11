@@ -9,7 +9,7 @@ import {
 import { InternalError } from "../../../../src/shared/errors/http-errors.js";
 
 describe("toMinor", () => {
-  it("IDR (exponent 0): 100000.00 -> 100000n, never x100", () => {
+  it("IDR (exponent 0): 100000.00 -> 100000n, never x100 (REG-010)", () => {
     expect(toMinor(new Decimal("100000.00"), "IDR")).toBe(100000n);
   });
 

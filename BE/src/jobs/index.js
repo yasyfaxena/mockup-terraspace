@@ -3,8 +3,11 @@ import { logger } from "../shared/lib/logger.js";
 import { runStalePendingSweep } from "./stale-pending-sweep.js";
 import { runFailedEventReplay } from "./failed-event-replay.js";
 import { runReconciliation } from "./reconciliation.js";
+import { runSessionCleanup } from "./session-cleanup.js";
+import { runCompleteBookings } from "./complete-bookings.js";
 
 const EVERY_FIVE_MINUTES = "*/5 * * * *";
+const HOURLY = "0 * * * *";
 const DAILY_AT_2AM = "0 2 * * *";
 
 /**
@@ -23,13 +26,16 @@ function guarded(name, run) {
 }
 
 /**
- * Registers the payments background jobs (payments.md §12). In-process
- * `node-cron`, per libraries.md §10 — no extra infrastructure, and jobs
- * run the same service code an HTTP request would.
+ * Registers every background job — payments (payments.md §12) and
+ * housekeeping (development-phases.md Phase 8). In-process `node-cron`,
+ * per libraries.md §10 — no extra infrastructure, and jobs run the same
+ * service code an HTTP request would.
  * @returns {void}
  */
 export function startJobs() {
   cron.schedule(EVERY_FIVE_MINUTES, guarded("stale-pending-sweep", runStalePendingSweep));
   cron.schedule(EVERY_FIVE_MINUTES, guarded("failed-event-replay", runFailedEventReplay));
   cron.schedule(DAILY_AT_2AM, guarded("reconciliation", runReconciliation));
+  cron.schedule(HOURLY, guarded("session-cleanup", runSessionCleanup));
+  cron.schedule(HOURLY, guarded("complete-bookings", runCompleteBookings));
 }

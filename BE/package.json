@@ -69,6 +69,7 @@
     "@types/express": "^5.0.6",
     "@types/html-to-text": "^9.0.4",
     "@types/node": "^22.20.2",
+    "@vitest/coverage-v8": "^4.1.11",
     "dotenv": "^17.4.2",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^10.1.8",

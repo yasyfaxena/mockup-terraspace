@@ -1,10 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import request from "supertest";
 import { Router } from "express";
 import express from "express";
 import { app } from "../../../../src/app.js";
 import { apiRouter } from "../../../../src/shared/router.js";
 import { errorHandler } from "../../../../src/shared/middleware/error-handler.js";
+import { sentryClient } from "../../../../src/shared/lib/sentry.js";
 import {
   NotFoundError,
   ValidationError,
@@ -97,6 +98,58 @@ describe("error envelope (§3)", () => {
     expect(res.status).toBe(500);
     expect(res.body.error.code).toBe("INTERNAL_ERROR");
     expect(res.body.error.message).toBe("Something went wrong.");
+  });
+
+  it("reports a non-operational error to Sentry (Phase 8: wired to the non-operational path)", async () => {
+    const captureSpy = vi.spyOn(sentryClient, "captureException").mockImplementation(() => "");
+    const probe = express();
+    probe.use((req, _res, next) => {
+      req.id = "probe-sentry-1";
+      next();
+    });
+    probe.get("/boom", () => {
+      throw new Error("a genuine bug");
+    });
+    probe.use(errorHandler);
+
+    await request(probe).get("/boom");
+
+    expect(captureSpy).toHaveBeenCalledTimes(1);
+    expect(captureSpy.mock.calls[0][0]).toBeInstanceOf(Error);
+    captureSpy.mockRestore();
+  });
+
+  it("never reports an operational error (404/409/422/...) to Sentry — it isn't a bug", async () => {
+    const captureSpy = vi.spyOn(sentryClient, "captureException").mockImplementation(() => "");
+    const probe = express();
+    probe.use((req, _res, next) => {
+      req.id = "probe-sentry-2";
+      next();
+    });
+    probe.get("/boom", (_req, _res, next) => next(new NotFoundError("Widget not found.")));
+    probe.use(errorHandler);
+
+    await request(probe).get("/boom");
+
+    expect(captureSpy).not.toHaveBeenCalled();
+    captureSpy.mockRestore();
+  });
+
+  it("never leaks a stack trace outside development — NODE_ENV=test must behave like production (Phase 8)", async () => {
+    const probe = express();
+    probe.use((req, _res, next) => {
+      req.id = "probe-stack";
+      next();
+    });
+    probe.get("/boom", () => {
+      throw new Error("leaked internal detail");
+    });
+    probe.use(errorHandler);
+
+    const res = await request(probe).get("/boom");
+
+    expect(res.body.error).not.toHaveProperty("stack");
+    expect(JSON.stringify(res.body)).not.toMatch(/at .*\.js:\d/);
   });
 
   it("registers apiRouter under /api/v1 without throwing on mount", () => {

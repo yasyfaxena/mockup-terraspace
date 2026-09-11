@@ -3,6 +3,7 @@ import { InternalError, ValidationError } from "../errors/http-errors.js";
 import { mapPrismaError } from "../errors/prisma-mapper.js";
 import { env } from "../config/env.js";
 import { logger } from "../lib/logger.js";
+import { sentryClient } from "../lib/sentry.js";
 
 /**
  * Converts a ZodError into a ValidationError with per-field detail.
@@ -41,6 +42,10 @@ function logMappedError(log, mapped, err) {
     log.warn({ code: mapped.code, status: mapped.status }, mapped.message);
   } else {
     log.error({ err, code: mapped.code }, "Unhandled error");
+    // Only the non-operational path — an expected 404/409/422 is not a
+    // bug and would just be noise in Sentry (development-phases.md
+    // Phase 8: "Sentry wired to the non-operational error path").
+    sentryClient.captureException(err);
   }
 }
 
@@ -51,7 +56,11 @@ function logMappedError(log, mapped, err) {
  * @returns {object}
  */
 function buildErrorBody(mapped, err, requestId) {
-  const includeStack = env.NODE_ENV !== "production" && !mapped.isOperational;
+  // "development" only — "test" would otherwise leak `at .../*.js:NN` stack
+  // frames into regression-suite responses too (development-phases.md
+  // Phase 8's no-leaked-internals exit criterion is a blanket response
+  // check, not a production-only one).
+  const includeStack = env.NODE_ENV === "development" && !mapped.isOperational;
   return {
     error: {
       code: mapped.code,

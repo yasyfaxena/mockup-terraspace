@@ -40,6 +40,30 @@ describe("GET /locations (locations.md §1)", () => {
     expect(found.stats.types.sort()).toEqual(["hot_desk", "meeting_room"]);
   });
 
+  it("classifies desks vs. rooms by the type enum, never by matching free text (REG-007)", async () => {
+    const location = await seedLocation();
+    // Free-text `name` says "Desk", but the enum `type` is a room — the
+    // room count must not be fooled by the string "desk" appearing
+    // somewhere in a free-text field.
+    await seedWorkspace({
+      locationId: location.id,
+      type: "meeting_room",
+      name: "The Corner Desk Suite",
+    });
+    // The inverse: a real desk whose name never mentions "desk" at all.
+    await seedWorkspace({
+      locationId: location.id,
+      type: "hot_desk",
+      name: "Spot 12",
+    });
+
+    const res = await request(app).get("/api/v1/locations");
+
+    const found = res.body.data.find((entry) => entry.id === location.id);
+    expect(found.stats.desksTotal).toBe(1);
+    expect(found.stats.roomsTotal).toBe(1);
+  });
+
   it("filters by city, case-insensitively", async () => {
     const location = await seedLocation({ city: "Bandung" });
     const res = await request(app).get("/api/v1/locations?city=bandung");
@@ -105,7 +129,7 @@ describe("GET /locations/:slug (locations.md §2)", () => {
 });
 
 describe("Admin locations (locations.md §3–6)", () => {
-  it("rejects a punctuation-only slug with 422, never persisting it", async () => {
+  it("rejects a punctuation-only slug with 422, never persisting it (REG-004)", async () => {
     const { cookie } = await createUserAndSignIn({ role: "admin" });
     const res = await request(app)
       .post("/api/v1/admin/locations")
@@ -157,7 +181,7 @@ describe("Admin locations (locations.md §3–6)", () => {
     expect(res.status).toBe(422);
   });
 
-  it("keeps every workspace attached when the slug is renamed — the FK is locationId", async () => {
+  it("keeps every workspace attached when the slug is renamed — the FK is locationId (REG-005)", async () => {
     const { cookie } = await createUserAndSignIn({ role: "admin" });
     const location = await seedLocation();
     const workspace = await seedWorkspace({ locationId: location.id });

@@ -37,6 +37,7 @@ export default [
         { category: "featureApi", pattern: "src/features/*/index.js" },
         { category: "app", pattern: "src/{app,server}.js" },
         { category: "app", pattern: "src/jobs/**" },
+        { category: "app", pattern: "src/openapi/**" },
       ],
     },
     rules: {
