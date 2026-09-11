@@ -8,6 +8,7 @@ import {
   useWorkspace,
   workspaceDetailQueryOptions,
 } from "@/features/workspaces";
+import { BookingSlotPicker } from "@/features/bookings";
 import { formatMoney } from "@/shared/format";
 import { ApiError } from "@/lib/api-client";
 
@@ -123,9 +124,16 @@ function WorkspaceDetailPage() {
             <p className="mt-4 text-xs text-muted-foreground">
               {workspace.cancellationPolicy || "See our cancellation policy for details."}
             </p>
-            <p className="mt-4 text-[11px] text-muted-foreground">
-              Booking creation lands in Phase 5.
-            </p>
+
+            <BookingSlotPicker
+              workspaceId={workspace.id}
+              pricePerHour={workspace.pricing.pricePerHour}
+              taxPercent={workspace.pricing.taxPercent}
+              minimumDurationMinutes={workspace.pricing.minimumDurationMinutes}
+              bookable={
+                workspace.availability === "available" || workspace.availability === "limited"
+              }
+            />
           </div>
         </div>
       </section>

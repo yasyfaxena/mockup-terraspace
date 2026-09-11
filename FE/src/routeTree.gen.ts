@@ -33,6 +33,8 @@ import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminWorkspacesRouteImport } from './routes/admin.workspaces'
 import { Route as AdminLoginRouteImport } from './routes/admin_.login'
+import { Route as BookingConfirmationRouteImport } from './routes/booking.confirmation'
+import { Route as BookingReviewRouteImport } from './routes/booking.review'
 import { Route as LocationsIndexRouteImport } from './routes/locations.index'
 import { Route as LocationsSlugRouteImport } from './routes/locations.$slug'
 import { Route as WorkspacesIndexRouteImport } from './routes/workspaces.index'
@@ -158,6 +160,16 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BookingConfirmationRoute = BookingConfirmationRouteImport.update({
+  id: '/booking/confirmation',
+  path: '/booking/confirmation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookingReviewRoute = BookingReviewRouteImport.update({
+  id: '/booking/review',
+  path: '/booking/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocationsIndexRoute = LocationsIndexRouteImport.update({
   id: '/locations/',
   path: '/locations/',
@@ -203,6 +215,8 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/workspaces': typeof AdminWorkspacesRoute
   '/admin/login': typeof AdminLoginRoute
+  '/booking/confirmation': typeof BookingConfirmationRoute
+  '/booking/review': typeof BookingReviewRoute
   '/locations/$slug': typeof LocationsSlugRoute
   '/workspaces/$id': typeof WorkspacesIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -232,6 +246,8 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/workspaces': typeof AdminWorkspacesRoute
   '/admin/login': typeof AdminLoginRoute
+  '/booking/confirmation': typeof BookingConfirmationRoute
+  '/booking/review': typeof BookingReviewRoute
   '/locations/$slug': typeof LocationsSlugRoute
   '/workspaces/$id': typeof WorkspacesIdRoute
   '/admin': typeof AdminIndexRoute
@@ -263,6 +279,8 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/workspaces': typeof AdminWorkspacesRoute
   '/admin_/login': typeof AdminLoginRoute
+  '/booking/confirmation': typeof BookingConfirmationRoute
+  '/booking/review': typeof BookingReviewRoute
   '/locations/$slug': typeof LocationsSlugRoute
   '/workspaces/$id': typeof WorkspacesIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -295,6 +313,8 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/workspaces'
     | '/admin/login'
+    | '/booking/confirmation'
+    | '/booking/review'
     | '/locations/$slug'
     | '/workspaces/$id'
     | '/admin/'
@@ -324,6 +344,8 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/workspaces'
     | '/admin/login'
+    | '/booking/confirmation'
+    | '/booking/review'
     | '/locations/$slug'
     | '/workspaces/$id'
     | '/admin'
@@ -354,6 +376,8 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/workspaces'
     | '/admin_/login'
+    | '/booking/confirmation'
+    | '/booking/review'
     | '/locations/$slug'
     | '/workspaces/$id'
     | '/admin/'
@@ -374,6 +398,8 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   TermsRoute: typeof TermsRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  BookingConfirmationRoute: typeof BookingConfirmationRoute
+  BookingReviewRoute: typeof BookingReviewRoute
   LocationsSlugRoute: typeof LocationsSlugRoute
   WorkspacesIdRoute: typeof WorkspacesIdRoute
   LocationsIndexRoute: typeof LocationsIndexRoute
@@ -550,6 +576,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/booking/confirmation': {
+      id: '/booking/confirmation'
+      path: '/booking/confirmation'
+      fullPath: '/booking/confirmation'
+      preLoaderRoute: typeof BookingConfirmationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/booking/review': {
+      id: '/booking/review'
+      path: '/booking/review'
+      fullPath: '/booking/review'
+      preLoaderRoute: typeof BookingReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/locations/': {
       id: '/locations/'
       path: '/locations'
@@ -626,6 +666,8 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   TermsRoute: TermsRoute,
   AdminLoginRoute: AdminLoginRoute,
+  BookingConfirmationRoute: BookingConfirmationRoute,
+  BookingReviewRoute: BookingReviewRoute,
   LocationsSlugRoute: LocationsSlugRoute,
   WorkspacesIdRoute: WorkspacesIdRoute,
   LocationsIndexRoute: LocationsIndexRoute,

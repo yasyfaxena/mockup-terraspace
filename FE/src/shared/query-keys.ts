@@ -25,4 +25,15 @@ export const queryKeys = {
     list: (params?: unknown) => ["amenities", "list", params ?? {}] as const,
     adminList: (params?: unknown) => ["amenities", "admin-list", params ?? {}] as const,
   },
+  bookings: {
+    all: () => ["bookings"] as const,
+    list: (params?: unknown) => ["bookings", "list", params ?? {}] as const,
+    detail: (reference: string) => ["bookings", "detail", reference] as const,
+    adminList: (params?: unknown) => ["bookings", "admin-list", params ?? {}] as const,
+    adminDetail: (id: string) => ["bookings", "admin-detail", id] as const,
+    calendar: (params?: unknown) => ["bookings", "calendar", params ?? {}] as const,
+  },
+  settings: {
+    public: () => ["settings", "public"] as const,
+  },
 } as const;

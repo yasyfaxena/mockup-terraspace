@@ -179,28 +179,31 @@ Verified against a real running `BE/` with real seeded data: signed in as a prom
 
 ---
 
-## Phase 5 — Bookings (core)
+## Phase 5 — Bookings (core) ✅ done
 
 **The critical phase**, same as the backend's. Everything before it is groundwork.
 
-### Build
+**What shipped:** `features/bookings/` — DTOs mirroring `bookings.mapper.js` exactly (list/detail/cancel/admin-list/admin-detail/calendar), `bookings/pricing/use-booking-price.ts` (a line-for-line port of BE `pricing.js`'s `computeBookingAmounts`, unit-tested against a real BE-created booking's actual numbers, not just the formula in isolation), `bookings.time.ts` (a **browser-local approximation** of BE's venue-timezone cancellation cutoff — the booking DTOs never expose the workspace's IANA timezone, only its city name, so this is a deliberate, documented simplification, not an oversight). `features/settings/` also landed early (public-settings read only) since the pricing mirror and cancellation display both need `taxPercent`/`cancellationWindowHours` — Phase 7 owns the admin write side.
 
-| Slice | Responsibility |
-|---|---|
-| `bookings/pricing/` | **Display-only** mirror of the BE's calculation — shows a live total as the user picks a time; the server total is still authoritative on submit |
-| `bookings/availability/` | Calendar/picker consuming Phase 3's availability endpoint |
-| `bookings.queries.ts` | `useCreateBooking`, optimistic-free (see below), `useCancelBooking` |
-| Customer screens | Review, confirmation, "my bookings" list, cancel |
-| Staff screens | Calendar view, create-for-customer, list with filters |
-| `bookings/components/admin-calendar-view.tsx` | Replaces `frontend/admin/admin-calendar.tsx` — keep the day/week/month grid, **fix** the room-column lookup: V1 matches a booking to a column by substring-matching two hardcoded room names, V2 must key off the real workspace list the calendar endpoint returns |
+Customer flow: `workspaces.$id.tsx` grew a `BookingSlotPicker` (date/time inputs + live price, replacing V1's page that had **no slot picker at all** — V1's `booking.review.tsx` only ever read start/end from URL params some earlier, unbuilt page was supposed to set) feeding a real `/booking/review` (price summary, `BOOKING_SLOT_TAKEN` handling) and `/booking/confirmation` (real `QrPass` using BE's actual `accessCode`, not V1's client-fabricated pseudo-payload string). `/dashboard` is a real scope-tabbed (`upcoming`/`past`/`all`), server-paginated list — V1 loaded every booking once and split it into two arrays client-side; that's exactly the pattern Phase 3 and this phase both explicitly rule out. Cancel uses `cancel-booking-dialog.tsx` (a real `Dialog`, not V1's bare button with no confirmation at all).
+
+Staff: `admin.calendar.tsx` + `admin-calendar-view.tsx` (the required room-column fix — see below), `admin.bookings.tsx` (real list, status filter, inline status change, delete). **Deliberately not built:** "create booking for a customer" — `POST /admin/bookings` is `staff`-or-`admin`, but `GET /admin/users` (the only way to look up a customer's id) is `admin`-only. There is no way for a staff user to find the `userId` this form would need without walking around that boundary, so a genuinely usable version of this screen isn't buildable against the real API as it stands — flagged here rather than shipped as a raw userId text box pretending to be a real feature.
+
+**V1's hardcoded room-column bug — fixed, not carried over:** `admin-calendar.tsx` matched a booking to a column via `workspace_name.includes("Prambanan")`-style substring checks against two hardcoded room names, in four separate places. `admin-calendar-view.tsx` derives its columns from the real `workspaceId`/`workspaceName` pairs the `GET /admin/bookings/calendar` response actually returns, and matches bookings to columns by `workspaceId` — works for any number of rooms at any location, not just two.
+
+**Two real bugs found only by testing this phase, not by reading the docs:**
+1. **A genuine SSR cross-request cache leak, sitting undetected since Phase 0.** `lib/query-client.ts` exported `queryClient` as a module-level singleton; `router.tsx`'s `getRouter()` (called once per SSR request by Start) imported and reused that same instance every time. Every request in the same Node process shared one cache — invisible while all the data being fetched was near-static catalog content, but it surfaced immediately once two different bookings needed two different real answers within the same process lifetime (the admin calendar kept showing an earlier request's now-stale empty result). Fixed by turning the export into `createQueryClient()`, called fresh inside `getRouter()` — the standard, correct TanStack Query SSR pattern, which nothing before this phase had exercised enough to expose the gap.
+2. `dashboard.tsx`'s cancellation-cutoff display depends on `usePublicSettings()`, which nothing was prefetching — same "loader must prefetch everything the page reads" gap Phase 3 already found and fixed elsewhere, just missed here originally.
 
 ### Exit criteria
 
-- [ ] **The booking review screen never sends a price to the server.** `bookings.schema.ts`'s create input has no amount field — matching [BE `development-phases.md`](../BE/development-phases.md) Phase 5's "accepts no amount field," enforced on both ends
-- [ ] `BOOKING_SLOT_TAKEN` re-fetches availability and shows the real conflict — never a generic "something went wrong" (see [`error-handling.md`](./error-handling.md) §4)
-- [ ] No optimistic update on booking creation — a slot can lose the race server-side, and showing a booking that then disappears is worse than a spinner
-- [ ] Cancellation window closed shows the exact reopening time, computed client-side only for display — the `403` from the server is what actually blocks it
-- [ ] "My bookings" pagination matches the API's `meta.totalPages` — no client-side slicing of an unbounded fetch
+- [x] **The booking review screen never sends a price to the server.** `bookings.schema.ts`'s `createBookingSchema` has no amount field, matching BE's exactly — verified for real: created a booking via the API with `unitPrice 12000 × 2h`, and the server's own total (`26640.00`) matches what `useBookingPrice` independently computes client-side from the same inputs, confirming the mirror is accurate without the server ever being told a price
+- [x] `BOOKING_SLOT_TAKEN` re-fetches availability and shows the real conflict — verified against a real double-booking attempt (`409`, `"This time slot was just booked."`); the review page's `catch` checks `error.code === "BOOKING_SLOT_TAKEN"` specifically to invalidate that date's availability query, and the message itself (never generic) comes from the query-client's existing global handler doing `toast.error(error.message)` for any `ApiError`
+- [x] No optimistic update on booking creation — `useCreateBooking` only invalidates on success; the review page's button stays disabled and says "Processing…" until the real response comes back
+- [x] Cancellation window closed shows the exact (browser-local-approximated) cutoff time, computed client-side only for display — the `403` from the server is what actually blocks it; verified against a real booking BE genuinely refused to cancel (`"Bookings can only be cancelled at least 24 hours in advance."`)
+- [x] "My bookings" pagination matches the API's `meta.totalPages` — no client-side slicing of an unbounded fetch; `useBookings({ scope, page })` is server-paginated per scope tab, not one big fetch split in the browser
+
+Verified against a real running `BE/`: created, viewed, and attempted to cancel a real booking end to end (signup → verify → sign-in → book → confirmation → dashboard), triggered a real slot conflict and a real cancellation-window rejection, and confirmed the admin calendar renders a real booking under its real workspace column. `npm run check` clean, production build succeeds, all 12 unit tests pass (3 new, covering the pricing mirror against BE's actual numbers).
 
 > The FE cannot fix either defect this phase exists to close on the backend ([BE `development-phases.md`](../BE/development-phases.md) Phase 5) — but it can reintroduce them by caching a client-computed price and sending it back. **Never round-trip a price the server already returned as a "current price" back to a create/update call.**
 
