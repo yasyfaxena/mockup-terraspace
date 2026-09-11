@@ -10,7 +10,7 @@ Implementation plan derived from the V2/FE specification. Phased to track [BE `d
 
 | # | Decision | Blocks | Status |
 |---|---|---|---|
-| 1 | Cutover strategy | Phase 0 | ✅ **Strangler, behind one flag.** `VITE_API_MODE=legacy \| v2` selects `src/backend/api/*` or `lib/api-client.ts` per environment. No feature is rewritten twice |
+| 1 | Cutover strategy | Phase 0 | ✅ **Superseded — separate app, mirrors `BE/`.** The in-app `VITE_API_MODE` flag below was the original plan; Phase 0 instead stood up `FE/` as a wholly new TanStack Start app (own `package.json`, own `src/`), the same shape as `BE/` relative to the old root app. It has no legacy code to flag against, so there is no runtime switch — cutover means deploying `FE/` instead of the root app, once it's ready, exactly like `BE/`'s story replacing `src/backend/api/*` |
 | 2 | Where Zod schemas live | Phase 0 | ✅ **Hand-mirrored, not shared as a package.** BE and FE are separate deployables ([BE `libraries.md`](../BE/libraries.md) §5) — importing BE's schema would couple the builds. A schema drift is caught by contract tests (§7), not the type system |
 | 3 | Capacitor / mobile shell | Phase 1 | ⏳ **Deferred, not decided here.** [`docs/BE/linter-libraries.md`](../../BE/linter-libraries.md) §4 flags this as unresolved between "web-only" and `MOBILE-README.md`. V2 FE architecture does not block either outcome — `features/` has no knowledge of Capacitor either way |
 | 4 | Design system source | Phase 1 | ✅ `components/ui/` relocates `frontend/ui/`'s 14 existing files as-is — no new component *library* adopted, though a handful of primitives (`dialog`, `tabs`, `switch`, data-table) get built fresh since they never existed as files. Visual identity (colors, fonts, gradients) is documented in [`frontend-spec.md`](./frontend-spec.md) §2, pulled from the real `styles.css`, not invented |
@@ -19,7 +19,9 @@ Implementation plan derived from the V2/FE specification. Phased to track [BE `d
 
 ### Decided — #1, cutover strategy
 
-Every feature is built once, against the V2 API, behind a flag read at `lib/api-client.ts`'s module boundary — not per-component `if` branches. When a BE phase lands, the matching FE phase flips its own features to `v2` in review; `legacy` for everything else keeps the site working end-to-end throughout the migration. Phase 8 deletes the flag along with `src/backend/api/*`.
+**Original plan (superseded):** every feature built once, against the V2 API, behind a flag read at `lib/api-client.ts`'s module boundary — not per-component `if` branches. When a BE phase lands, the matching FE phase flips its own features to `v2` in review; `legacy` for everything else keeps the site working end-to-end throughout the migration. Phase 8 deletes the flag along with `src/backend/api/*`.
+
+**What actually shipped in Phase 0:** `FE/` is a new, independent app rather than an in-place rewrite of the root app's `src/`. There is no `legacy`/`v2` branch inside it — every feature it builds only ever talks to `BE/`. The root app (`src/frontend/`, `src/backend/api/*`) keeps running unchanged until `FE/` is feature-complete enough to replace it wholesale; there is no per-feature flip. Phase 8's "delete `src/backend/api/*`" line item becomes "retire the root app," not "delete a flag branch."
 
 ---
 
@@ -61,26 +63,28 @@ Every feature is built once, against the V2 API, behind a flag read at `lib/api-
 
 ---
 
-## Phase 0 — Scaffold
+## Phase 0 — Scaffold ✅ done
 
-**Goal:** an app that can talk to `BE/` for one request, with the error envelope typed and the flag in place.
+**Goal:** an app that can talk to `BE/` for one request, with the error envelope typed.
+
+**What shipped:** `FE/` — a standalone TanStack Start app (own `package.json`, pinned to the same major dependency versions as the root app's V1 stack: React 19, `@tanstack/react-router` 1.170.18, `@tanstack/react-start` 1.168.32, `@tanstack/react-query` 5, Tailwind v4, `zod` ^4 to match `BE/`'s major per [`libraries.md`](./libraries.md) §10). No `VITE_API_MODE` flag — see decision #1 above for why.
 
 ### Build
 
 | Area | Files |
 |---|---|
-| API client | `lib/api-client.ts` — base URL from env, `credentials: "include"`, parses [BE `error-handling.md`](../BE/error-handling.md) §3's envelope |
-| Query client | `lib/query-client.ts` — default `staleTime`, global error → toast wiring (see [`error-handling.md`](./error-handling.md) §2) |
-| Error types | `shared/error-codes.ts` — the `ERROR_CODE` catalog, hand-mirrored from [BE `error-handling.md`](../BE/error-handling.md) §7 |
-| Flag | `VITE_API_MODE` read once, in `lib/api-client.ts` — not scattered per component |
-| Query keys | `shared/query-keys.ts` — the one factory every feature imports (see [`state-map.md`](./state-map.md) §2) |
+| API client | `FE/src/lib/api-client.ts` — base URL from `VITE_API_BASE_URL`, `credentials: "include"`, parses [BE `error-handling.md`](../BE/error-handling.md) §3's envelope into `ApiError` |
+| Query client | `FE/src/lib/query-client.ts` — default `staleTime`, global `QueryCache`/`MutationCache` `onError` → `sonner` toast |
+| Error types | `FE/src/shared/error-codes.ts` — the `ERROR_CODE` catalog, hand-mirrored from [BE `error-handling.md`](../BE/error-handling.md) §7 |
+| Query keys | `FE/src/shared/query-keys.ts` — the one factory every feature imports (see [`state-map.md`](./state-map.md) §2) |
+| App shell | `FE/src/router.tsx`, `FE/src/routes/__root.tsx`, `FE/src/routes/index.tsx` — minimal TanStack Start harness; `index.tsx` is the Phase 0 proof, querying `GET /health` through the api client |
 
 ### Exit criteria
 
-- [ ] `lib/api-client.ts` against `BE/`'s `GET /health` returns typed success
-- [ ] A deliberately triggered `404` renders through the same error path a `422` does — one envelope parser, not one per endpoint
-- [ ] `VITE_API_MODE=legacy` still serves the app unchanged — the flag is provably a no-op until a feature opts in
-- [ ] `npm run check` passes on the new files
+- [x] `lib/api-client.ts` against `BE/`'s `GET /health` returns typed success — verified against a real running `BE/` (dev server + `curl`), not just a mock
+- [x] A deliberately triggered `404` renders through the same error path a `422` does — one envelope parser, not one per endpoint (`FE/tests/unit/lib/api-client.test.ts`)
+- [x] `npm run check` passes on the new files (format, lint, types all clean)
+- [ ] ~~`VITE_API_MODE=legacy` still serves the app unchanged~~ — N/A, no flag exists; see decision #1
 
 > **Do the error envelope parsing in Phase 0, not later** — same reasoning as [BE `development-phases.md`](../BE/development-phases.md) Phase 0. Every later phase's `*.queries.ts` throws through it.
 

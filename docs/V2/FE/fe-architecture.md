@@ -5,6 +5,8 @@
 
 **Companion:** [`development-phases.md`](./development-phases.md) · [`state-map.md`](./state-map.md) · [`error-handling.md`](./error-handling.md) · [`linter.md`](./linter.md) · [`testing.md`](./testing.md) · [`features/`](./features/) · [BE `be-architecture.md`](../BE/be-architecture.md)
 
+> **Location note (Phase 0):** every `src/` path below is rooted at the new standalone `FE/` app (`FE/src/features/`, `FE/src/routes/`, …), not the existing root app's `src/`. `FE/` mirrors `BE/`'s relationship to the old root app — a wholly separate deployable, not an in-place rewrite. `src/routes/` "stays exactly where it is" therefore means *within `FE/`*, not the root app; see [`development-phases.md`](./development-phases.md) decision #1.
+
 ---
 
 ## 1. What changes from V1
