@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatMoney } from "@/shared/format";
+import { Link } from "@tanstack/react-router";
 import { updateProfileSchema, type UpdateProfileInput } from "../users.schema";
 import { useMe, useUpdateProfile } from "../users.queries";
 
@@ -18,7 +19,7 @@ const DEFAULT_VALUES: UpdateProfileInput = { name: "", phone: null, company: nul
  * separate schema entirely.
  */
 export function ProfileForm() {
-  const { data: me, isPending } = useMe();
+  const { data: me, isPending, isError, refetch } = useMe();
   const updateProfile = useUpdateProfile();
 
   const {
@@ -46,11 +47,36 @@ export function ProfileForm() {
     }
   }
 
-  if (isPending || !me) {
+  if (isPending) {
     return (
       <div className="space-y-3">
         <div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
         <div className="h-24 w-full animate-pulse rounded-2xl bg-muted" />
+      </div>
+    );
+  }
+
+  if (isError || !me) {
+    return (
+      <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-[var(--shadow-soft)]">
+        <p className="text-sm font-semibold text-foreground">Could not load profile details</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Please check your connection or sign in again.
+        </p>
+        <div className="mt-5 flex items-center justify-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            className="text-xs font-semibold"
+          >
+            Retry
+          </Button>
+          <Button asChild size="sm" className="text-xs font-semibold">
+            <Link to="/login">Sign in</Link>
+          </Button>
+        </div>
       </div>
     );
   }

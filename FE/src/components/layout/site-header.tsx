@@ -80,56 +80,50 @@ export function SiteHeader() {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="start"
-              className="w-80 rounded-2xl border border-border/80 bg-card/95 p-2 backdrop-blur-2xl shadow-2xl space-y-1"
+              className="w-56 rounded-2xl border border-border/80 bg-card/95 p-1.5 backdrop-blur-2xl shadow-2xl space-y-0.5"
             >
-              <DropdownMenuItem asChild className="p-0 focus:bg-transparent cursor-pointer">
+              <DropdownMenuItem
+                asChild
+                className="p-0 rounded-xl cursor-pointer border border-transparent outline-none transition-all duration-150 hover:bg-primary/10 hover:border-primary/30 focus:bg-primary/10 focus:border-primary/30 data-[highlighted]:bg-primary/10 data-[highlighted]:border-primary/30"
+              >
                 <Link
                   to="/workspaces"
-                  className="flex items-start gap-3 rounded-xl p-2.5 transition-all hover:bg-primary/10 hover:border-primary/20 border border-transparent focus:bg-primary/10"
+                  className="flex w-full items-center gap-3 rounded-xl p-2.5 outline-none"
                 >
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary border border-primary/25">
                     <Layers className="size-4" />
                   </div>
-                  <div>
-                    <div className="text-xs font-bold text-foreground">{t("nav.workspaces")}</div>
-                    <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-                      {t("nav.spacesDesc")}
-                    </div>
-                  </div>
+                  <span className="text-xs font-bold text-foreground">{t("nav.workspaces")}</span>
                 </Link>
               </DropdownMenuItem>
 
-              <DropdownMenuItem asChild className="p-0 focus:bg-transparent cursor-pointer">
+              <DropdownMenuItem
+                asChild
+                className="p-0 rounded-xl cursor-pointer border border-transparent outline-none transition-all duration-150 hover:bg-purple-500/10 hover:border-purple-500/30 focus:bg-purple-500/10 focus:border-purple-500/30 data-[highlighted]:bg-purple-500/10 data-[highlighted]:border-purple-500/30"
+              >
                 <Link
                   to="/locations"
-                  className="flex items-start gap-3 rounded-xl p-2.5 transition-all hover:bg-purple-500/10 hover:border-purple-500/20 border border-transparent focus:bg-purple-500/10"
+                  className="flex w-full items-center gap-3 rounded-xl p-2.5 outline-none"
                 >
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/25">
                     <Building2 className="size-4" />
                   </div>
-                  <div>
-                    <div className="text-xs font-bold text-foreground">{t("nav.locations")}</div>
-                    <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-                      {t("nav.locationsDesc")}
-                    </div>
-                  </div>
+                  <span className="text-xs font-bold text-foreground">{t("nav.locations")}</span>
                 </Link>
               </DropdownMenuItem>
 
-              <DropdownMenuItem asChild className="p-0 focus:bg-transparent cursor-pointer">
+              <DropdownMenuItem
+                asChild
+                className="p-0 rounded-xl cursor-pointer border border-transparent outline-none transition-all duration-150 hover:bg-cyan-500/10 hover:border-cyan-500/30 focus:bg-cyan-500/10 focus:border-cyan-500/30 data-[highlighted]:bg-cyan-500/10 data-[highlighted]:border-cyan-500/30"
+              >
                 <Link
                   to="/amenities"
-                  className="flex items-start gap-3 rounded-xl p-2.5 transition-all hover:bg-cyan-500/10 hover:border-cyan-500/20 border border-transparent focus:bg-cyan-500/10"
+                  className="flex w-full items-center gap-3 rounded-xl p-2.5 outline-none"
                 >
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/25">
                     <Sparkles className="size-4" />
                   </div>
-                  <div>
-                    <div className="text-xs font-bold text-foreground">{t("nav.amenities")}</div>
-                    <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-                      {t("nav.amenitiesDesc")}
-                    </div>
-                  </div>
+                  <span className="text-xs font-bold text-foreground">{t("nav.amenities")}</span>
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>

@@ -1,4 +1,4 @@
-import { redirect } from "@tanstack/react-router";
+import { isRedirect, redirect } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-client";
 import { forwardedRequestHeaders } from "@/shared/forwarded-headers";
 import type { Role } from "./auth.types";
@@ -14,13 +14,28 @@ export const useSession = authClient.useSession;
  * the doc: anonymous -> /login, wrong role -> / — never the same redirect
  * for both (mirrors BE error-handling.md §5's 401-vs-403 split).
  */
-export async function requireAuth() {
-  const headers = forwardedRequestHeaders();
-  const { data } = await authClient.getSession({ fetchOptions: { headers } });
-  if (!data?.session) {
-    throw redirect({ to: "/login" });
+function loginRedirect(location?: { pathname?: string }) {
+  if (location?.pathname) {
+    return redirect({ to: "/login", search: { redirect: location.pathname } });
   }
-  return data;
+  return redirect({ to: "/login" });
+}
+
+export async function requireAuth(location?: { pathname?: string }) {
+  try {
+    const headers = forwardedRequestHeaders();
+    const { data } = await authClient.getSession({ fetchOptions: { headers } });
+    if (!data?.session) {
+      throw loginRedirect(location);
+    }
+    return data;
+  } catch (err) {
+    if (isRedirect(err)) {
+      throw err;
+    }
+    // Handle network errors, Failed to fetch, or unreachable auth server gracefully
+    throw loginRedirect(location);
+  }
 }
 
 export async function requireRole(...roles: Role[]) {

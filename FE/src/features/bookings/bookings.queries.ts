@@ -1,4 +1,10 @@
-import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { queryKeys } from "@/shared/query-keys";
 import {
   cancelBooking,
@@ -73,7 +79,10 @@ export function useAdminBookingDetail(id: string) {
 }
 
 export function useAdminCalendar(params: CalendarParams) {
-  return useQuery(adminCalendarQueryOptions(params));
+  return useQuery({
+    ...adminCalendarQueryOptions(params),
+    placeholderData: keepPreviousData,
+  });
 }
 
 function useInvalidateBookings() {

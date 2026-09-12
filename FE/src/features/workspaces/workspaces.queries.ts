@@ -1,4 +1,10 @@
-import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { queryKeys } from "@/shared/query-keys";
 import {
   createWorkspace,
@@ -43,7 +49,10 @@ export function adminWorkspacesListQueryOptions(params: ListAdminWorkspacesParam
 }
 
 export function useWorkspaces(params: ListWorkspacesParams = {}) {
-  return useQuery(workspacesListQueryOptions(params));
+  return useQuery({
+    ...workspacesListQueryOptions(params),
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function useWorkspace(id: string) {
@@ -54,11 +63,15 @@ export function useWorkspaceAvailability(id: string, date: string) {
   return useQuery({
     ...workspaceAvailabilityQueryOptions(id, date),
     enabled: Boolean(id) && Boolean(date),
+    placeholderData: keepPreviousData,
   });
 }
 
 export function useAdminWorkspaces(params: ListAdminWorkspacesParams = {}) {
-  return useQuery(adminWorkspacesListQueryOptions(params));
+  return useQuery({
+    ...adminWorkspacesListQueryOptions(params),
+    placeholderData: keepPreviousData,
+  });
 }
 
 function useInvalidateWorkspaces() {

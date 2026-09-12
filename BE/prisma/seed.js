@@ -20,7 +20,7 @@ async function seedAdminSettings() {
 }
 
 /** Creates a user with a working `credential` login — same shape Better Auth itself writes. */
-async function createCredentialUser({ name, email, role }) {
+async function createCredentialUser({ name, email, role }, password = SEED_PASSWORD) {
   const user = await prisma.user.create({
     data: { id: randomUUID(), name, email, emailVerified: true, role },
   });
@@ -30,10 +30,18 @@ async function createCredentialUser({ name, email, role }) {
       userId: user.id,
       accountId: user.id,
       providerId: "credential",
-      password: await hashPassword(SEED_PASSWORD),
+      password: await hashPassword(password),
     },
   });
   return user;
+}
+
+/** Idempotent — upserts the local dev login requested outside the standard seed cast. */
+async function seedLocalDevUser() {
+  const email = "ardialbrian@gmail.com";
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) return existing;
+  return createCredentialUser({ name: "Ardial Brian", email, role: "admin" }, "ChangeMe123!");
 }
 
 async function seedUsers() {
@@ -198,10 +206,11 @@ async function main() {
   const amenities = await seedAmenities();
   const workspaces = await seedWorkspaces(locations, amenities);
   await seedBookings(customers, workspaces);
+  await seedLocalDevUser();
 
   // eslint-disable-next-line no-console -- seed scripts run outside the request path; pino is not wired here
   console.log(
-    "Seed complete: 1 admin, 1 staff, 2 customers, 2 locations, 10 workspaces, 6 amenities, 4 bookings.",
+    "Seed complete: 1 admin, 1 staff, 2 customers, 2 locations, 10 workspaces, 6 amenities, 4 bookings, 1 local dev user.",
   );
 }
 

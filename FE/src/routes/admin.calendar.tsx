@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   AdminCalendarView,
   adminCalendarQueryOptions,
@@ -19,6 +18,22 @@ function shiftDate(date: string, days: number): string {
   return next.toISOString().slice(0, 10);
 }
 
+function formatDisplayDate(dateStr: string): string {
+  try {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    if (!year || !month || !day) return dateStr;
+    const dateObj = new Date(Date.UTC(year, month - 1, day));
+    return dateObj.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
 export const Route = createFileRoute("/admin/calendar")({
   loader: ({ context: { queryClient } }) => {
     const date = todayISO();
@@ -29,51 +44,89 @@ export const Route = createFileRoute("/admin/calendar")({
 
 function AdminCalendarPage() {
   const [date, setDate] = useState(todayISO());
-  const { data, isPending } = useAdminCalendar({ from: date, to: date });
+  const { data, isPending, isFetching } = useAdminCalendar({ from: date, to: date });
   const entries = data?.data ?? [];
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-white/35">Real workspace columns — no room-name matching.</p>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
+          <div className="inline-flex h-9 items-center rounded-xl border border-white/[.12] bg-white/[.04] shadow-xs">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8 rounded-lg text-white/70 hover:bg-white/[.08] hover:text-white disabled:pointer-events-none disabled:opacity-25"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDate((d) => shiftDate(d, -1));
+              }}
+              disabled={isFetching}
+              aria-label="Previous day"
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+
+            <label
+              onClick={(e) => e.stopPropagation()}
+              className="relative flex h-full cursor-pointer items-center justify-center border-x border-white/[.1] px-3 text-xs font-semibold text-white transition-colors hover:bg-white/[.05]"
+            >
+              <CalendarIcon className="mr-1.5 size-3.5 text-white/50" />
+              <span className="tabular-nums">{formatDisplayDate(date)}</span>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  if (e.target.value) setDate(e.target.value);
+                }}
+                className="absolute inset-0 size-full cursor-pointer opacity-0"
+                aria-label="Choose date"
+              />
+            </label>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8 rounded-lg text-white/70 hover:bg-white/[.08] hover:text-white disabled:pointer-events-none disabled:opacity-25"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDate((d) => shiftDate(d, 1));
+              }}
+              disabled={isFetching}
+              aria-label="Next day"
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+
           <Button
-            variant="outline"
-            size="icon"
-            className="size-9 border-white/[.1]"
-            onClick={() => setDate((d) => shiftDate(d, -1))}
-          >
-            <ChevronLeft className="size-4" />
-          </Button>
-          <Input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="h-9 w-36 border-white/[.1] bg-white/[.05] text-center text-xs text-white"
-          />
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-9 border-white/[.1]"
-            onClick={() => setDate((d) => shiftDate(d, 1))}
-          >
-            <ChevronRight className="size-4" />
-          </Button>
-          <Button
+            type="button"
             variant="outline"
             size="sm"
-            className="h-9 border-white/[.1]"
-            onClick={() => setDate(todayISO())}
+            className="h-9 rounded-xl border-white/[.12] px-3 text-xs font-semibold text-white/90 hover:bg-white/[.06] disabled:opacity-30"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDate(todayISO());
+            }}
+            disabled={date === todayISO() || isFetching}
           >
             Today
           </Button>
         </div>
       </div>
 
-      {isPending ? (
+      {isPending && !data ? (
         <p className="text-sm text-white/40">Loading…</p>
       ) : (
-        <AdminCalendarView entries={entries} />
+        <div className={isFetching ? "opacity-60 transition-opacity" : "transition-opacity"}>
+          <AdminCalendarView entries={entries} />
+        </div>
       )}
     </div>
   );

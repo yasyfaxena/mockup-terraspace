@@ -5,7 +5,26 @@ import { env } from "../config/env.js";
 const MS_PER_MINUTE = 60_000;
 
 const AUTH_WINDOW_MINUTES = 15;
-const AUTH_MAX_REQUESTS = 20;
+const AUTH_MAX_REQUESTS = 30;
+
+/**
+ * Credential-guessing and reset-spam surfaces only. `get-session`,
+ * `sign-out`, `callback/*` etc. are read/no-op traffic that Better Auth's
+ * client calls on nearly every page load — sharing the same tight budget
+ * with those starved real sign-ins out under completely normal browsing.
+ */
+const AUTH_SENSITIVE_PATH = /^\/api\/auth\/(sign-in|sign-up|forget-password|reset-password)/;
+
+/**
+ * `authRateLimit` is mounted with `app.use("/api/auth", ...)`, so inside it
+ * `req.path` is already relative to that prefix — only `req.originalUrl`
+ * still has the full, unstripped path the regex above expects.
+ * @param {import("express").Request} req
+ * @returns {boolean}
+ */
+function isSensitiveAuthPath(req) {
+  return AUTH_SENSITIVE_PATH.test(req.originalUrl);
+}
 
 const API_WINDOW_MINUTES = 15;
 const API_MAX_REQUESTS = 300;
@@ -37,9 +56,10 @@ function skipInTest() {
 }
 
 /**
- * Every `/api/auth/*` request — sign-in, sign-up, forget-password —
- * shares one tight budget per IP. This is what makes credential
- * stuffing and password-reset-email spam expensive rather than free
+ * Sign-in, sign-up and forget/reset-password share one tight budget per
+ * IP — every other `/api/auth/*` route (`get-session`, `sign-out`,
+ * `callback/*`, …) is skipped. This is what makes credential stuffing
+ * and password-reset-email spam expensive rather than free
  * (development-phases.md Phase 8, auth.md's forget-password note).
  */
 export const authRateLimit = rateLimit({
@@ -48,7 +68,7 @@ export const authRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: toErrorEnvelope,
-  skip: skipInTest,
+  skip: (req) => skipInTest() || !isSensitiveAuthPath(req),
 });
 
 /** A looser, general budget for the rest of `/api/v1` — defense in depth, not the primary control. */

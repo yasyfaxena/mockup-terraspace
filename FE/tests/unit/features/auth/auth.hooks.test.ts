@@ -34,6 +34,27 @@ describe("requireAuth", () => {
 
     expect(redirectTo).toBe("/login");
   });
+
+  it("redirects to /login when getSession throws a network error / Failed to fetch", async () => {
+    getSession.mockRejectedValue(new TypeError("Failed to fetch"));
+
+    const redirectTo = await requireAuth()
+      .then(() => null)
+      .catch((e: { options: { to?: string } }) => e.options.to);
+
+    expect(redirectTo).toBe("/login");
+  });
+
+  it("preserves location.pathname as redirect param when redirecting to /login", async () => {
+    getSession.mockResolvedValue({ data: null });
+
+    const redirectOptions = await requireAuth({ pathname: "/profile" })
+      .then(() => null)
+      .catch((e: { options: { to?: string; search?: { redirect?: string } } }) => e.options);
+
+    expect(redirectOptions?.to).toBe("/login");
+    expect(redirectOptions?.search?.redirect).toBe("/profile");
+  });
 });
 
 describe("requireRole", () => {
