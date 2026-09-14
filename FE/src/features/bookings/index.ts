@@ -9,6 +9,7 @@ export {
   useCreateAdminBooking,
   useUpdateAdminBooking,
   useDeleteAdminBooking,
+  useSyncGoogleCalendar,
   bookingsListQueryOptions,
   bookingDetailQueryOptions,
   adminBookingsListQueryOptions,
@@ -17,6 +18,11 @@ export {
 } from "./bookings.queries";
 export { useBookingPrice, computeDurationHours } from "./pricing/use-booking-price";
 export { estimateCancellationCutoff } from "./bookings.time";
+export {
+  createGoogleCalendarUrl,
+  downloadIcsFile,
+  type CalendarEventDetails,
+} from "./calendar-export";
 export { QrPass } from "./components/qr-pass";
 export { BookingSlotPicker } from "./components/booking-slot-picker";
 export { BookingCard } from "./components/booking-card";

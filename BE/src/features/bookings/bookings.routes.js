@@ -20,6 +20,7 @@ import {
   updateAdmin,
   remove,
   calendar,
+  syncGoogleCalendar,
 } from "./bookings.controller.js";
 
 /** Mounted at `/bookings` — see shared/router.js. Every route is customer-owned; `requireAuth` is the only gate, ownership is enforced in the service (bookings.md §4 rule 3). */
@@ -28,6 +29,7 @@ bookingsRouter.post("/", requireAuth, validate({ body: createBookingSchema }), c
 bookingsRouter.get("/", requireAuth, validate({ query: listBookingsQuerySchema }), list);
 bookingsRouter.get("/:reference", requireAuth, getByReference);
 bookingsRouter.patch("/:id/cancel", requireAuth, cancel);
+bookingsRouter.post("/:reference/sync-calendar", requireAuth, syncGoogleCalendar);
 
 /** Mounted at `/admin/bookings` — see shared/router.js. */
 export const adminBookingsRouter = Router();

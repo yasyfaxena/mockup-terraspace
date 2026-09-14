@@ -82,7 +82,7 @@ export function ImageField({
 
       {value ? (
         <div className="relative w-full overflow-hidden rounded-lg border border-border bg-muted/20">
-          <img src={value} alt="" className="h-32 w-full object-cover" />
+          <img src={value} alt="Image preview" className="h-32 w-full object-cover" />
           <button
             type="button"
             onClick={() => onChange("")}

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useState } from "react";
 import { MapPin, ShieldCheck } from "lucide-react";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,6 +12,10 @@ import {
 import { BookingSlotPicker } from "@/features/bookings";
 import { formatMoney } from "@/shared/format";
 import { ApiError } from "@/lib/api-client";
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export const Route = createFileRoute("/workspaces/$id")({
   loader: async ({ context: { queryClient }, params }) => {
@@ -27,6 +32,9 @@ export const Route = createFileRoute("/workspaces/$id")({
 function WorkspaceDetailPage() {
   const { id } = Route.useParams();
   const { data: workspace, isPending, isError } = useWorkspace(id);
+  const [selectedDate, setSelectedDate] = useState(todayISO());
+  const [selectedStart, setSelectedStart] = useState("10:00");
+  const [selectedEnd, setSelectedEnd] = useState("11:00");
 
   if (isPending) {
     return (
@@ -108,7 +116,17 @@ function WorkspaceDetailPage() {
               ))}
             </div>
 
-            <AvailabilityCalendar workspaceId={workspace.id} />
+            <AvailabilityCalendar
+              workspaceId={workspace.id}
+              selectedDate={selectedDate}
+              onDateChange={setSelectedDate}
+              selectedStart={selectedStart}
+              selectedEnd={selectedEnd}
+              onSelectSlot={(start, end) => {
+                setSelectedStart(start);
+                setSelectedEnd(end);
+              }}
+            />
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] lg:sticky lg:top-24">
@@ -133,6 +151,12 @@ function WorkspaceDetailPage() {
               bookable={
                 workspace.availability === "available" || workspace.availability === "limited"
               }
+              date={selectedDate}
+              onDateChange={setSelectedDate}
+              startTime={selectedStart}
+              onStartTimeChange={setSelectedStart}
+              endTime={selectedEnd}
+              onEndTimeChange={setSelectedEnd}
             />
           </div>
         </div>

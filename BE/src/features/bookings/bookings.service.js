@@ -8,6 +8,7 @@ import { MINIMUM_BOOKING_MINUTES } from "../../shared/constants/hours.js";
 import { generateBookingReference, generateAccessCode } from "../../shared/lib/reference.js";
 import { isExclusionViolation } from "../../shared/errors/prisma-mapper.js";
 import { BookingsRepository } from "./bookings.repository.js";
+import { googleCalendarService } from "./google-calendar.service.js";
 import { computeBookingAmounts, computeDurationHours } from "./pricing/pricing.js";
 import { instantFromLocal, isCancellationWindowClosed } from "./bookings.time.js";
 import {
@@ -233,6 +234,18 @@ export class BookingsService {
   }
 
   /**
+   * @param {string} userId
+   * @param {string} reference
+   * @throws {NotFoundError} not found, or belongs to another user
+   * @returns {Promise<any>}
+   */
+  async getEntityByReference(userId, reference) {
+    const booking = await this.repo.findByReference(reference);
+    if (!booking || booking.userId !== userId) throw new NotFoundError(BOOKING_NOT_FOUND_MESSAGE);
+    return booking;
+  }
+
+  /**
    * Owner or staff. Ownership is checked here, not middleware — the row
    * has not been loaded yet when the guard runs (bookings.md §4 rule 3).
    * @param {{ id: string, role?: string | null }} actor
@@ -417,6 +430,25 @@ export class BookingsService {
    */
   async confirmFromPayment(id, client) {
     await this.repo.update(id, { status: "confirmed", paymentStatus: "paid" }, client);
+    void this.#autoSyncCalendar(id);
+  }
+
+  /**
+   * Best-effort background sync of a confirmed booking to customer's Google Calendar.
+   * @param {string} id
+   * @returns {Promise<void>}
+   */
+  async #autoSyncCalendar(id) {
+    try {
+      const booking = await this.repo.findById(id);
+      if (!booking) return;
+      const fullBooking = await this.repo.findByReference(booking.reference);
+      if (fullBooking) {
+        await googleCalendarService.syncBooking(fullBooking.userId, fullBooking);
+      }
+    } catch {
+      // Best-effort auto sync; silent fail
+    }
   }
 
   /**

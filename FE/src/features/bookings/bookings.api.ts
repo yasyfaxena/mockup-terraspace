@@ -92,3 +92,15 @@ export function getAdminCalendar(params: CalendarParams) {
     `/api/v1/admin/bookings/calendar${toQueryString(params)}`,
   );
 }
+
+export type SyncGoogleCalendarResponse = {
+  synced: boolean;
+  eventId?: string;
+  htmlLink?: string;
+  reason?: "NO_GOOGLE_ACCOUNT" | "API_ERROR" | "NETWORK_ERROR";
+  error?: string;
+};
+
+export function syncGoogleCalendar(reference: string) {
+  return apiClient.post<SyncGoogleCalendarResponse>(`/api/v1/bookings/${reference}/sync-calendar`);
+}

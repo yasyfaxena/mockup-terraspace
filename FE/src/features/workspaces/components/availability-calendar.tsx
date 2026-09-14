@@ -47,11 +47,26 @@ function formatDisplayDate(dateStr: string): string {
 
 /**
  * Reads free/busy from `GET /workspaces/:id/availability` — every interval
- * is just `{ from, to }` HH:MM strings, never a booking id/reference/name
- * (development-phases.md Phase 3 exit criteria's leak check).
+ * is just `{ from, to }` HH:MM strings.
  */
-export function AvailabilityCalendar({ workspaceId }: { workspaceId: string }) {
-  const [date, setDate] = useState(todayISO());
+export function AvailabilityCalendar({
+  workspaceId,
+  selectedDate: controlledDate,
+  onDateChange,
+  selectedStart,
+  selectedEnd,
+  onSelectSlot,
+}: {
+  workspaceId: string;
+  selectedDate?: string;
+  onDateChange?: (date: string) => void;
+  selectedStart?: string;
+  selectedEnd?: string;
+  onSelectSlot?: (start: string, end: string) => void;
+}) {
+  const [internalDate, setInternalDate] = useState(todayISO());
+  const date = controlledDate ?? internalDate;
+  const setDate = onDateChange ?? setInternalDate;
   const { data, isPending, isError, isFetching } = useWorkspaceAvailability(workspaceId, date);
 
   const openStart = data ? timeToMinutes(data.openingHours.from) : 9 * 60;
@@ -68,6 +83,29 @@ export function AvailabilityCalendar({ workspaceId }: { workspaceId: string }) {
     const height = Math.max(26, ((endMin - startMin) / 60) * HOUR_HEIGHT_PX);
     return { top, height };
   }
+
+  const isSelectedDate = !controlledDate || controlledDate === date;
+  const startMin = selectedStart ? timeToMinutes(selectedStart) : null;
+  const endMin = selectedEnd ? timeToMinutes(selectedEnd) : null;
+  const hasValidSelection =
+    isSelectedDate &&
+    startMin !== null &&
+    endMin !== null &&
+    endMin > startMin &&
+    selectedStart !== undefined &&
+    selectedEnd !== undefined;
+
+  const selectionBlock = hasValidSelection ? blockPosition(selectedStart, selectedEnd) : null;
+
+  const selectionConflict =
+    hasValidSelection &&
+    Boolean(
+      data?.busy.some((block) => {
+        const bStart = timeToMinutes(block.from);
+        const bEnd = timeToMinutes(block.to);
+        return startMin < bEnd && endMin > bStart;
+      }),
+    );
 
   return (
     <div className="mt-10 rounded-2xl border border-border/90 bg-card p-5 shadow-[var(--shadow-soft)] sm:p-6">
@@ -92,7 +130,7 @@ export function AvailabilityCalendar({ workspaceId }: { workspaceId: string }) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setDate((d) => shiftDate(d, -1));
+                setDate(shiftDate(date, -1));
               }}
               disabled={date <= todayISO() || isFetching}
               aria-label="Previous day"
@@ -127,7 +165,7 @@ export function AvailabilityCalendar({ workspaceId }: { workspaceId: string }) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setDate((d) => shiftDate(d, 1));
+                setDate(shiftDate(date, 1));
               }}
               disabled={isFetching}
               aria-label="Next day"
@@ -185,39 +223,117 @@ export function AvailabilityCalendar({ workspaceId }: { workspaceId: string }) {
             </div>
 
             <div className="relative overflow-hidden bg-card/20">
-              {hours.map((h) => (
-                <div
-                  key={h}
-                  className="absolute inset-x-0 border-t border-border/50"
-                  style={{
-                    top: `${(h * 60 - openStart) * (HOUR_HEIGHT_PX / 60) + TOP_CLEARANCE_PX}px`,
-                  }}
-                />
-              ))}
+              {hours.map((h) => {
+                const slotStartStr = `${String(h % 24).padStart(2, "0")}:00`;
+                const nextH = h + 1;
+                const slotEndStr = `${String(nextH % 24).padStart(2, "0")}:00`;
+                const isOccupied = data.busy.some((b) => {
+                  const bStart = timeToMinutes(b.from);
+                  const bEnd = timeToMinutes(b.to);
+                  return h * 60 < bEnd && nextH * 60 > bStart;
+                });
 
-              {data.busy.length === 0 ? (
+                return (
+                  <div
+                    key={h}
+                    onClick={() => {
+                      if (onSelectSlot && !isOccupied) {
+                        onSelectSlot(slotStartStr, slotEndStr);
+                      }
+                    }}
+                    className={cn(
+                      "group absolute inset-x-0 border-t border-border/50 transition-colors",
+                      onSelectSlot && !isOccupied && "cursor-pointer hover:bg-primary/[0.04]",
+                    )}
+                    style={{
+                      top: `${(h * 60 - openStart) * (HOUR_HEIGHT_PX / 60) + TOP_CLEARANCE_PX}px`,
+                      height: `${HOUR_HEIGHT_PX}px`,
+                    }}
+                    title={
+                      isOccupied
+                        ? `${slotStartStr} – ${slotEndStr} is booked`
+                        : onSelectSlot
+                          ? `Click to select ${slotStartStr} – ${slotEndStr}`
+                          : undefined
+                    }
+                  >
+                    {onSelectSlot && !isOccupied && (
+                      <span className="pointer-events-none absolute left-3 top-1 select-none text-[10px] font-medium text-primary/60 opacity-0 transition-opacity group-hover:opacity-100">
+                        Click to select {slotStartStr}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+
+              {data.busy.length === 0 && !hasValidSelection && (
                 <p className="absolute inset-x-4 top-6 text-xs font-medium text-success">
                   All slots free for this date.
                 </p>
-              ) : (
-                data.busy.map((block, index) => {
-                  const { top, height } = blockPosition(block.from, block.to);
-                  return (
-                    <div
-                      key={index}
-                      className="absolute inset-x-2 z-10 rounded-lg border border-l-4 border-l-destructive border-destructive/40 bg-destructive/10 p-2 text-xs"
-                      style={{ top: `${top}px`, height: `${height}px` }}
-                    >
-                      <div className="flex items-center gap-1.5 font-bold text-destructive">
-                        <XCircle className="size-3.5 shrink-0" />
-                        Booked
-                      </div>
-                      <div className="mt-0.5 font-mono text-[11px] text-destructive/80">
-                        {block.from} – {block.to}
-                      </div>
+              )}
+
+              {data.busy.map((block, index) => {
+                const { top, height } = blockPosition(block.from, block.to);
+                return (
+                  <div
+                    key={index}
+                    className="absolute inset-x-2 z-10 rounded-lg border border-l-4 border-l-destructive border-destructive/40 bg-destructive/10 p-2 text-xs"
+                    style={{ top: `${top}px`, height: `${height}px` }}
+                  >
+                    <div className="flex items-center gap-1.5 font-bold text-destructive">
+                      <XCircle className="size-3.5 shrink-0" />
+                      Booked
                     </div>
-                  );
-                })
+                    <div className="mt-0.5 font-mono text-[11px] text-destructive/80">
+                      {block.from} – {block.to}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Real-time preview of current booking selection */}
+              {hasValidSelection && selectionBlock && (
+                <div
+                  className={cn(
+                    "absolute inset-x-2 z-20 rounded-xl border-2 p-2.5 text-xs shadow-lg transition-all duration-300 ease-out backdrop-blur-xs",
+                    selectionConflict
+                      ? "border-amber-500 bg-amber-500/15 text-amber-900 ring-2 ring-amber-500/30 dark:text-amber-200"
+                      : "border-primary bg-primary/15 text-primary ring-2 ring-primary/40 shadow-primary/20",
+                  )}
+                  style={{
+                    top: `${selectionBlock.top}px`,
+                    height: `${selectionBlock.height}px`,
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-1.5 font-bold">
+                    <div className="flex items-center gap-1.5">
+                      {selectionConflict ? (
+                        <XCircle className="size-3.5 shrink-0 text-amber-500" />
+                      ) : (
+                        <span className="relative flex size-2">
+                          <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-75" />
+                          <span className="relative inline-flex size-2 rounded-full bg-primary" />
+                        </span>
+                      )}
+                      <span className="tracking-tight">
+                        {selectionConflict ? "Slot Conflict" : "Your Selection"}
+                      </span>
+                    </div>
+                    <span className="rounded-md bg-background/90 px-1.5 py-0.5 text-[10px] font-mono font-bold shadow-xs">
+                      {selectedStart} – {selectedEnd}
+                    </span>
+                  </div>
+
+                  {selectionConflict ? (
+                    <p className="mt-1 text-[11px] font-medium text-amber-700 dark:text-amber-300">
+                      Overlaps with an already booked slot. Please choose another time.
+                    </p>
+                  ) : (
+                    <p className="mt-0.5 text-[11px] opacity-90">
+                      Live selection preview · Bookable
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </div>

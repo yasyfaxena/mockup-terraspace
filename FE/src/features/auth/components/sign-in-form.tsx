@@ -57,7 +57,8 @@ export function SignInForm({ redirectTo = "/dashboard" }: { redirectTo?: string 
   };
 
   const onGoogleSignIn = () => {
-    void authClient.signIn.social({ provider: "google", callbackURL: redirectTo });
+    const callbackURL = new URL(redirectTo, window.location.origin).href;
+    void authClient.signIn.social({ provider: "google", callbackURL });
   };
 
   return (

@@ -16,6 +16,7 @@ import {
   getBookingByReference,
   listAdminBookings,
   listBookings,
+  syncGoogleCalendar,
   updateAdminBooking,
   type CalendarParams,
   type ListAdminBookingsParams,
@@ -136,5 +137,11 @@ export function useDeleteAdminBooking() {
   return useMutation({
     mutationFn: (id: string) => deleteAdminBooking(id),
     onSuccess: invalidate,
+  });
+}
+
+export function useSyncGoogleCalendar() {
+  return useMutation({
+    mutationFn: (reference: string) => syncGoogleCalendar(reference),
   });
 }

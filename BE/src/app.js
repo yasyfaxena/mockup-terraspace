@@ -61,6 +61,12 @@ app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 app.use(healthRouter); // GET /health — outside /api/v1, no auth
 app.use("/api/v1", apiRateLimit, apiRouter);
 
+// ── Browser redirects to frontend ──────────────────────────
+app.get("/dashboard", (req, res) => {
+  const feUrl = env.TRUSTED_ORIGINS[0] || "http://localhost:5173";
+  return res.redirect(`${feUrl}/dashboard`);
+});
+
 // ── Fallbacks — order matters ───────────────────────────────
 app.use(notFoundHandler); // 404 — must come after routes
 app.use(errorHandler); // ← always last

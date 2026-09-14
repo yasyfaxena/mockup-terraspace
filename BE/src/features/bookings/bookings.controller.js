@@ -1,4 +1,5 @@
 import { bookingsService } from "./bookings.service.js";
+import { googleCalendarService } from "./google-calendar.service.js";
 import { asAuthed } from "../../shared/types/express.jsdoc.js";
 import { stringParam } from "../../shared/lib/params.js";
 import { HTTP_STATUS } from "../../shared/constants/http-status.js";
@@ -93,6 +94,18 @@ export const remove = async (req, res, next) => {
 export const calendar = async (req, res, next) => {
   try {
     return res.json(await bookingsService.calendar(/** @type {any} */ (req).validatedQuery));
+  } catch (err) {
+    return next(err);
+  }
+};
+
+/** @type {import("express").RequestHandler} */
+export const syncGoogleCalendar = async (req, res, next) => {
+  try {
+    const userId = asAuthed(req).user.id;
+    const reference = stringParam(req, "reference");
+    const booking = await bookingsService.getEntityByReference(userId, reference);
+    return res.json(await googleCalendarService.syncBooking(userId, booking));
   } catch (err) {
     return next(err);
   }

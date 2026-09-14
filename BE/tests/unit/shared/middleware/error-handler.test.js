@@ -10,6 +10,7 @@ import {
   NotFoundError,
   ValidationError,
   ForbiddenError,
+  PayloadTooLargeError,
 } from "../../../../src/shared/errors/index.js";
 
 describe("error envelope (§3)", () => {
@@ -168,5 +169,41 @@ describe("error envelope (§3)", () => {
     const res = await request(probe).get("/boom");
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("maps PayloadTooLargeError to 413 with PAYLOAD_TOO_LARGE code", async () => {
+    const probe = express();
+    probe.use((req, _res, next) => {
+      req.id = "probe-5";
+      next();
+    });
+    probe.get("/boom", (_req, _res, next) =>
+      next(new PayloadTooLargeError("File exceeds limit.")),
+    );
+    probe.use(errorHandler);
+
+    const res = await request(probe).get("/boom");
+    expect(res.status).toBe(413);
+    expect(res.body.error.code).toBe("PAYLOAD_TOO_LARGE");
+    expect(res.body.error.message).toBe("File exceeds limit.");
+  });
+
+  it("maps raw entity.too.large body-parser error to 413 with PAYLOAD_TOO_LARGE envelope", async () => {
+    const probe = express();
+    probe.use((req, _res, next) => {
+      req.id = "probe-6";
+      next();
+    });
+    probe.get("/boom", (_req, _res, next) => {
+      const err = new Error("request entity too large");
+      Object.assign(err, { status: 413, type: "entity.too.large" });
+      next(err);
+    });
+    probe.use(errorHandler);
+
+    const res = await request(probe).get("/boom");
+    expect(res.status).toBe(413);
+    expect(res.body.error.code).toBe("PAYLOAD_TOO_LARGE");
+    expect(res.body.error.message).toContain("Payload too large");
   });
 });

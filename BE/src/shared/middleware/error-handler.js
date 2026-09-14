@@ -1,5 +1,10 @@
 import { AppError } from "../errors/app-error.js";
-import { InternalError, ValidationError } from "../errors/http-errors.js";
+import {
+  InternalError,
+  PayloadTooLargeError,
+  ValidationError,
+} from "../errors/http-errors.js";
+import { HTTP_STATUS } from "../constants/http-status.js";
 import { mapPrismaError } from "../errors/prisma-mapper.js";
 import { env } from "../config/env.js";
 import { logger } from "../lib/logger.js";
@@ -21,6 +26,18 @@ function toValidationError(err) {
 
 /**
  * @param {unknown} err
+ * @returns {boolean}
+ */
+function isPayloadTooLarge(err) {
+  if (!err || typeof err !== "object") return false;
+  return (
+    ("status" in err && err.status === HTTP_STATUS.PAYLOAD_TOO_LARGE) ||
+    ("type" in err && err.type === "entity.too.large")
+  );
+}
+
+/**
+ * @param {unknown} err
  * @returns {AppError}
  */
 function mapError(err) {
@@ -28,15 +45,9 @@ function mapError(err) {
   if (err?.constructor?.name === "ZodError") {
     return toValidationError(/** @type {import("zod").ZodError} */ (err));
   }
-  if (
-    err &&
-    typeof err === "object" &&
-    (("status" in err && err.status === 413) || ("type" in err && err.type === "entity.too.large"))
-  ) {
-    return new AppError(
+  if (isPayloadTooLarge(err)) {
+    return new PayloadTooLargeError(
       "Payload too large. The uploaded image exceeds the allowed size limit.",
-      413,
-      "PAYLOAD_TOO_LARGE",
     );
   }
   return mapPrismaError(err) ?? new InternalError("Unexpected error.", { cause: err });

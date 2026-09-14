@@ -22,18 +22,39 @@ export function BookingSlotPicker({
   taxPercent,
   minimumDurationMinutes,
   bookable,
+  date: controlledDate,
+  onDateChange,
+  startTime: controlledStartTime,
+  onStartTimeChange,
+  endTime: controlledEndTime,
+  onEndTimeChange,
 }: {
   workspaceId: string;
   pricePerHour: string;
   taxPercent: string;
   minimumDurationMinutes: number;
   bookable: boolean;
+  date?: string;
+  onDateChange?: (date: string) => void;
+  startTime?: string;
+  onStartTimeChange?: (time: string) => void;
+  endTime?: string;
+  onEndTimeChange?: (time: string) => void;
 }) {
   const { data } = useSession();
   const navigate = useNavigate();
-  const [date, setDate] = useState(todayISO());
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("11:00");
+  const [internalDate, setInternalDate] = useState(todayISO());
+  const [internalStartTime, setInternalStartTime] = useState("10:00");
+  const [internalEndTime, setInternalEndTime] = useState("11:00");
+
+  const date = controlledDate ?? internalDate;
+  const setDate = onDateChange ?? setInternalDate;
+
+  const startTime = controlledStartTime ?? internalStartTime;
+  const setStartTime = onStartTimeChange ?? setInternalStartTime;
+
+  const endTime = controlledEndTime ?? internalEndTime;
+  const setEndTime = onEndTimeChange ?? setInternalEndTime;
 
   const price = useBookingPrice({ startTime, endTime, unitPrice: pricePerHour, taxPercent });
   const isValidDuration = price.durationHours * 60 >= minimumDurationMinutes;

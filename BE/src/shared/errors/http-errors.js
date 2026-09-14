@@ -45,6 +45,13 @@ export class ConflictError extends AppError {
   code = ERROR_CODE.CONFLICT;
 }
 
+export class PayloadTooLargeError extends AppError {
+  /** @type {number} */
+  status = HTTP_STATUS.PAYLOAD_TOO_LARGE;
+  /** @type {string} */
+  code = ERROR_CODE.PAYLOAD_TOO_LARGE;
+}
+
 export class RateLimitError extends AppError {
   /** @type {number} */
   status = HTTP_STATUS.RATE_LIMITED;

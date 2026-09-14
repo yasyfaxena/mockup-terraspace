@@ -68,7 +68,8 @@ export function SignUpForm({ redirectTo = "/dashboard" }: { redirectTo?: string 
   };
 
   const onGoogleSignUp = () => {
-    void authClient.signIn.social({ provider: "google", callbackURL: redirectTo });
+    const callbackURL = new URL(redirectTo, window.location.origin).href;
+    void authClient.signIn.social({ provider: "google", callbackURL });
   };
 
   if (confirmSent) {

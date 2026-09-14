@@ -19,6 +19,7 @@ export const errorMessages: Record<Locale, Record<ErrorCode, string>> = {
     FORBIDDEN: "You don't have permission to do that.",
     NOT_FOUND: "We couldn't find that.",
     CONFLICT: "That conflicts with something else — please refresh and try again.",
+    PAYLOAD_TOO_LARGE: "The uploaded file is too large. Please use a smaller file or image.",
     RATE_LIMITED: "Too many attempts — please wait a moment and try again.",
     INTERNAL_ERROR: "Something went wrong on our end. Please try again.",
     BOOKING_SLOT_TAKEN: "This time slot was just booked.",
@@ -46,6 +47,8 @@ export const errorMessages: Record<Locale, Record<ErrorCode, string>> = {
     FORBIDDEN: "Anda tidak memiliki izin untuk melakukan itu.",
     NOT_FOUND: "Kami tidak dapat menemukannya.",
     CONFLICT: "Itu bertentangan dengan hal lain — silakan muat ulang dan coba lagi.",
+    PAYLOAD_TOO_LARGE:
+      "Berkas yang diunggah terlalu besar. Harap gunakan berkas atau gambar yang lebih kecil.",
     RATE_LIMITED: "Terlalu banyak percobaan — silakan tunggu sebentar dan coba lagi.",
     INTERNAL_ERROR: "Terjadi kesalahan di sistem kami. Silakan coba lagi.",
     BOOKING_SLOT_TAKEN: "Slot waktu ini baru saja dipesan.",
