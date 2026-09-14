@@ -34,33 +34,38 @@ export function AdminWorkspaceTable({
   }
 
   if (workspaces.length === 0) {
-    return <p className="py-8 text-center text-sm text-white/40">No workspaces yet.</p>;
+    return <p className="py-8 text-center text-sm text-white/60">No workspaces yet.</p>;
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-white/[.07]">
+    <div className="overflow-hidden rounded-xl border border-white/[.07] bg-[#09101f]/40">
       {workspaces.map((workspace) => (
         <div
           key={workspace.id}
-          className="flex items-center gap-4 border-b border-white/[.04] px-5 py-4 last:border-b-0"
+          className="flex items-center gap-4 border-b border-white/[.06] px-5 py-4 last:border-b-0 hover:bg-white/[.02] transition-colors"
         >
           <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
             <Building2 className="size-4 text-primary" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-white">{workspace.name}</p>
-            <p className="truncate text-xs text-white/30">
+            <p className="truncate text-xs text-white/65">
               {workspace.location.name} · {workspace.type} · {formatMoney(workspace.pricePerHour)}
               /hr
             </p>
           </div>
           <AvailabilityBadge status={workspace.availability} />
-          <button onClick={() => onEdit(workspace)} className="p-2 text-white/35 hover:text-white">
+          <button
+            onClick={() => onEdit(workspace)}
+            className="p-2 text-white/60 hover:text-white transition-colors cursor-pointer"
+            title="Edit workspace"
+          >
             <Edit3 className="size-3.5" />
           </button>
           <button
             onClick={() => void handleDelete(workspace)}
-            className="p-2 text-white/30 hover:text-red-400"
+            className="p-2 text-white/50 hover:text-red-400 transition-colors cursor-pointer"
+            title="Delete workspace"
           >
             <Trash2 className="size-3.5" />
           </button>

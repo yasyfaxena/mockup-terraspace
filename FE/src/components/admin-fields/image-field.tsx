@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { ImagePlus, X } from "lucide-react";
 
-const labelCls = "text-[10px] uppercase tracking-wider text-white/35";
+const labelCls = "text-xs font-semibold text-foreground";
 
 /** Reads a File as a base64 data URL — V2 has no multipart upload endpoint, so this stays. */
 function readFileAsDataUrl(file: File): Promise<string> {
@@ -53,12 +53,12 @@ export function ImageField({
       <span className={labelCls}>{label}</span>
 
       {value ? (
-        <div className="relative w-full overflow-hidden rounded-lg border border-white/[.08] bg-white/[.03]">
+        <div className="relative w-full overflow-hidden rounded-lg border border-border bg-muted/20">
           <img src={value} alt="" className="h-32 w-full object-cover" />
           <button
             type="button"
             onClick={() => onChange("")}
-            className="absolute right-1.5 top-1.5 flex items-center justify-center rounded-full bg-black/60 p-1 text-white/80 transition-colors hover:bg-black/80 hover:text-white"
+            className="absolute right-1.5 top-1.5 flex items-center justify-center rounded-full bg-black/60 p-1 text-white transition-colors hover:bg-black/80"
             title="Remove image"
           >
             <X className="size-3.5" />
@@ -68,10 +68,10 @@ export function ImageField({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="flex h-24 w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/[.15] bg-white/[.02] text-white/35 transition-colors hover:border-white/25 hover:text-white/60"
+          className="flex h-24 w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-input bg-muted/30 text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted/50 hover:text-foreground cursor-pointer"
         >
-          <ImagePlus className="size-4" />
-          <span className="text-[11px]">
+          <ImagePlus className="size-5" />
+          <span className="text-xs font-medium">
             {uploading ? "Uploading…" : "Click to upload an image"}
           </span>
         </button>
@@ -86,17 +86,17 @@ export function ImageField({
       />
 
       <div className="flex items-center gap-2">
-        <span className="shrink-0 text-[10px] text-white/25">or URL</span>
+        <span className="shrink-0 text-xs font-medium text-muted-foreground">or URL</span>
         <input
           type="text"
           value={value.startsWith("data:") ? "" : value}
           placeholder={value.startsWith("data:") ? "(uploaded file)" : "https://…"}
           onChange={(event) => onChange(event.target.value)}
-          className="flex-1 rounded-lg border border-white/[.08] bg-white/[.05] px-2.5 py-1.5 text-xs text-white"
+          className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-xs text-foreground shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
       </div>
 
-      {error && <span className="text-[10px] text-red-400">{error}</span>}
+      {error && <span className="text-xs text-destructive">{error}</span>}
     </div>
   );
 }

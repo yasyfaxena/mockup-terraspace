@@ -25,7 +25,7 @@ function AdminWorkspacesPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-white/35">Manage workspaces from the live V2 API.</p>
+        <p className="text-xs text-white/60">Manage workspaces from the live V2 API.</p>
         <Button
           onClick={() => {
             setEditing(null);
@@ -38,7 +38,7 @@ function AdminWorkspacesPage() {
       </div>
 
       {isPending ? (
-        <p className="text-sm text-white/40">Loading…</p>
+        <p className="text-sm text-white/60">Loading…</p>
       ) : (
         <AdminWorkspaceTable
           workspaces={workspaces}

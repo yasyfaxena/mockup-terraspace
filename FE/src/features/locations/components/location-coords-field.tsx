@@ -1,9 +1,9 @@
 import { MapPin } from "lucide-react";
 import { googleMapsUrl } from "@/shared/geocoding";
 
-const labelCls = "text-[10px] uppercase tracking-wider text-white/35";
+const labelCls = "text-xs font-semibold text-foreground";
 const inputCls =
-  "w-full rounded-lg border border-white/[.08] bg-white/[.05] px-3 py-2 text-sm normal-case text-white";
+  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 /**
  * Manual latitude/longitude entry, with a shortcut to open the point in
@@ -26,12 +26,12 @@ export function LocationCoordsField({
   }
 
   return (
-    <div className="grid gap-1.5">
+    <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-3">
       <span className={labelCls}>Location coordinates</span>
 
       <div className="grid grid-cols-2 gap-2">
         <label className="grid gap-1">
-          <span className="text-[10px] normal-case text-white/35">Latitude</span>
+          <span className="text-xs font-medium text-muted-foreground">Latitude</span>
           <input
             type="number"
             step="any"
@@ -42,7 +42,7 @@ export function LocationCoordsField({
           />
         </label>
         <label className="grid gap-1">
-          <span className="text-[10px] normal-case text-white/35">Longitude</span>
+          <span className="text-xs font-medium text-muted-foreground">Longitude</span>
           <input
             type="number"
             step="any"
@@ -54,12 +54,12 @@ export function LocationCoordsField({
         </label>
       </div>
 
-      <p className="text-[10px] text-white/25">
+      <p className="text-[11px] text-muted-foreground">
         Look the spot up on Google Maps, right-click the point, and copy the lat/long here.
       </p>
 
-      <div className="flex items-center justify-between text-[11px] text-white/35">
-        <span>
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span className="font-mono text-[11px]">
           {latitude != null && longitude != null
             ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
             : "No coordinates yet"}

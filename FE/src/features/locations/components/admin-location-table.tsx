@@ -25,22 +25,22 @@ export function AdminLocationTable({
   }
 
   if (locations.length === 0) {
-    return <p className="py-8 text-center text-sm text-white/40">No locations yet.</p>;
+    return <p className="py-8 text-center text-sm text-white/60">No locations yet.</p>;
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-white/[.07]">
+    <div className="overflow-hidden rounded-xl border border-white/[.07] bg-[#09101f]/40">
       {locations.map((location) => (
         <div
           key={location.id}
-          className="flex items-center gap-4 border-b border-white/[.04] px-5 py-4 last:border-b-0"
+          className="flex items-center gap-4 border-b border-white/[.06] px-5 py-4 last:border-b-0 hover:bg-white/[.02] transition-colors"
         >
           <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
             <MapPin className="size-4 text-primary" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-white">{location.name}</p>
-            <p className="truncate text-xs text-white/30">
+            <p className="truncate text-xs text-white/65">
               {location.address}, {location.city} · {location.workspaceCount} workspace
               {location.workspaceCount === 1 ? "" : "s"}
             </p>
@@ -48,14 +48,19 @@ export function AdminLocationTable({
           {location.status === "active" ? (
             <CheckCircle2 className="size-4 text-emerald-400" />
           ) : (
-            <XCircle className="size-4 text-white/30" />
+            <XCircle className="size-4 text-white/40" />
           )}
-          <button onClick={() => onEdit(location)} className="p-2 text-white/35 hover:text-white">
+          <button
+            onClick={() => onEdit(location)}
+            className="p-2 text-white/60 hover:text-white transition-colors cursor-pointer"
+            title="Edit location"
+          >
             <Edit3 className="size-3.5" />
           </button>
           <button
             onClick={() => void handleDelete(location)}
-            className="p-2 text-white/30 hover:text-red-400"
+            className="p-2 text-white/50 hover:text-red-400 transition-colors cursor-pointer"
+            title="Delete location"
           >
             <Trash2 className="size-3.5" />
           </button>

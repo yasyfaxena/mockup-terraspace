@@ -1,6 +1,6 @@
 import type { AmenityDto } from "../amenities.types";
 
-const labelCls = "text-[10px] uppercase tracking-wider text-white/35";
+const labelCls = "text-xs font-semibold text-foreground";
 
 /**
  * Selects by amenity **id**, matching the junction-table contract
@@ -29,9 +29,9 @@ export function AmenityMultiSelect({
     <div className="grid gap-1.5">
       <span className={labelCls}>{label}</span>
       {options.length === 0 ? (
-        <p className="text-xs text-white/30">No amenities in the database yet.</p>
+        <p className="text-xs text-muted-foreground">No amenities in the database yet.</p>
       ) : (
-        <div className="flex flex-wrap gap-1.5 rounded-lg border border-white/[.08] bg-white/[.03] p-2.5">
+        <div className="flex flex-wrap gap-1.5 rounded-lg border border-input bg-muted/20 p-2.5">
           {options.map((amenity) => {
             const active = selected.includes(amenity.id);
             return (
@@ -41,8 +41,8 @@ export function AmenityMultiSelect({
                 onClick={() => toggle(amenity.id)}
                 className={
                   active
-                    ? "rounded-full border border-primary/40 bg-primary/20 px-2.5 py-1 text-[11px] font-medium text-white"
-                    : "rounded-full border border-white/[.08] bg-white/[.04] px-2.5 py-1 text-[11px] font-medium text-white/45 hover:text-white/70"
+                    ? "rounded-full border border-primary bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-xs cursor-pointer transition-colors"
+                    : "rounded-full border border-input bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted cursor-pointer transition-colors"
                 }
               >
                 {amenity.name}

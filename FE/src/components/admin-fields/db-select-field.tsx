@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
-const labelCls = "text-[10px] uppercase tracking-wider text-white/35";
+const labelCls = "text-xs font-semibold text-foreground";
 const inputCls =
-  "w-full rounded-lg border border-white/[.08] bg-white/[.05] px-3 py-2 text-sm normal-case text-white";
+  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 /**
  * Dropdown of existing distinct values, with an inline "add new" fallback —
@@ -42,7 +42,7 @@ export function DbSelectField({
               type="button"
               title="Pick from database"
               onClick={() => setCustomMode(false)}
-              className="shrink-0 rounded-lg border border-white/[.08] bg-white/[.05] px-2.5 text-white/40 hover:text-white"
+              className="shrink-0 rounded-md border border-input bg-background px-2.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
             >
               <ChevronDown className="size-3.5" />
             </button>

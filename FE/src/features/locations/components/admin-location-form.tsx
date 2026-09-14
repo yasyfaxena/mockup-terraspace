@@ -190,7 +190,7 @@ export function AdminLocationForm({
             control={control}
             name="access247"
             render={({ field }) => (
-              <label className="flex items-center gap-2 text-xs text-white/60">
+              <label className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
                 <Checkbox
                   checked={field.value}
                   onCheckedChange={(v) => field.onChange(Boolean(v))}

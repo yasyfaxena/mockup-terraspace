@@ -147,8 +147,8 @@ export function AdminWorkspaceForm({
               <div className="grid gap-1.5">
                 <Label>Type</Label>
                 <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
                     {WORKSPACE_TYPES.map((t) => (
@@ -203,8 +203,8 @@ export function AdminWorkspaceForm({
               <div className="grid gap-1.5">
                 <Label>Location</Label>
                 <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select location" />
                   </SelectTrigger>
                   <SelectContent>
                     {locations.map((location) => (
@@ -225,8 +225,8 @@ export function AdminWorkspaceForm({
               <div className="grid gap-1.5">
                 <Label>Availability</Label>
                 <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select availability" />
                   </SelectTrigger>
                   <SelectContent>
                     {WORKSPACE_AVAILABILITIES.map((value) => (
@@ -256,7 +256,7 @@ export function AdminWorkspaceForm({
             control={control}
             name="simpleBooking"
             render={({ field }) => (
-              <label className="flex items-center gap-2 text-xs text-white/60">
+              <label className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
                 <Checkbox
                   checked={field.value}
                   onCheckedChange={(v) => field.onChange(Boolean(v))}
