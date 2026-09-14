@@ -28,6 +28,17 @@ function mapError(err) {
   if (err?.constructor?.name === "ZodError") {
     return toValidationError(/** @type {import("zod").ZodError} */ (err));
   }
+  if (
+    err &&
+    typeof err === "object" &&
+    (("status" in err && err.status === 413) || ("type" in err && err.type === "entity.too.large"))
+  ) {
+    return new AppError(
+      "Payload too large. The uploaded image exceeds the allowed size limit.",
+      413,
+      "PAYLOAD_TOO_LARGE",
+    );
+  }
   return mapPrismaError(err) ?? new InternalError("Unexpected error.", { cause: err });
 }
 

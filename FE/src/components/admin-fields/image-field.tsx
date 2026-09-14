@@ -3,11 +3,39 @@ import { ImagePlus, X } from "lucide-react";
 
 const labelCls = "text-xs font-semibold text-foreground";
 
-/** Reads a File as a base64 data URL — V2 has no multipart upload endpoint, so this stays. */
-function readFileAsDataUrl(file: File): Promise<string> {
+/** Reads and optimizes an image File as a compressed base64 data URL */
+function processImageFile(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX_DIM = 1600;
+        let { width, height } = img;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          } else {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(String(reader.result));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const format = file.type === "image/png" ? "image/png" : "image/jpeg";
+        resolve(canvas.toDataURL(format, 0.85));
+      };
+      img.onerror = () => resolve(String(reader.result));
+      img.src = String(reader.result);
+    };
     reader.onerror = () => reject(new Error("Could not read file"));
     reader.readAsDataURL(file);
   });
@@ -40,7 +68,7 @@ export function ImageField({
     setError(null);
     setUploading(true);
     try {
-      onChange(await readFileAsDataUrl(file));
+      onChange(await processImageFile(file));
     } catch {
       setError("Failed to read file.");
     } finally {
