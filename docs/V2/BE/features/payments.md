@@ -2,7 +2,7 @@
 
 **Owns:** `payments`, `payment_events`, `refunds` · Conventions: [`README.md`](./README.md)
 
-**Provider:** [PayBridge](https://pt-api.ardial.my.id:55000/docs/integration.md) — a payment orchestration API fronting **Xendit** and **Midtrans** behind one signed REST interface.
+**Provider:** [PayBridge](https://paybridge.ardial.my.id/docs/integration.md) — a payment orchestration API fronting **Xendit** and **Midtrans** behind one signed REST interface.
 
 This promotes the `payments` module that [`erd-spec.md`](../erd-spec.md) §16.5 deferred.
 
@@ -224,9 +224,9 @@ Every call to PayBridge is signed with our Ed25519 private key. **No new library
 
 | Env var | Notes |
 |---|---|
-| `PAYBRIDGE_BASE_URL` | `https://pt-api.ardial.my.id:55000` |
+| `PAYBRIDGE_BASE_URL` | `https://paybridge-sandbox.ardial.my.id` (Sandbox) or `https://paybridge.ardial.my.id` (Production) |
 | `PAYBRIDGE_KEY_ID` | → `x-key-id` |
-| `PAYBRIDGE_PRIVATE_KEY` | Ed25519 PEM, **base64-encoded** to survive env newlines. Never logged |
+| `PAYBRIDGE_PRIVATE_KEY` | Ed25519 private key in raw hex (64-char) or base64-encoded PKCS#8 PEM |
 | `PAYBRIDGE_APP_CODE` | 4-char app code |
 | `PAYBRIDGE_CALLBACK_URL` | Must match the registered URL — its **path** is part of the signed string |
 | `PAYBRIDGE_PROVIDER` | Default provider: `xendit` |

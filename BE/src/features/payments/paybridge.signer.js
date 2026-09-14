@@ -6,14 +6,23 @@ const SECONDS_PER_MINUTE = 60;
 const MS_PER_SECOND = 1000;
 const REQUEST_EXPIRY_MS = REQUEST_EXPIRY_MINUTES * SECONDS_PER_MINUTE * MS_PER_SECOND;
 
+const RAW_HEX_KEY_LENGTH = 64;
+
 /** @type {import("node:crypto").KeyObject | undefined} */
 let cachedPrivateKey;
 
 /** @returns {import("node:crypto").KeyObject} */
 function privateKey() {
   if (!cachedPrivateKey) {
-    const pem = Buffer.from(env.PAYBRIDGE_PRIVATE_KEY, "base64").toString("utf8");
-    cachedPrivateKey = createPrivateKey(pem);
+    const raw = env.PAYBRIDGE_PRIVATE_KEY.trim();
+    if (raw.length === RAW_HEX_KEY_LENGTH && /^[0-9a-fA-F]+$/.test(raw)) {
+      const pkcs8Prefix = Buffer.from("302e020100300506032b657004220420", "hex");
+      const der = Buffer.concat([pkcs8Prefix, Buffer.from(raw, "hex")]);
+      cachedPrivateKey = createPrivateKey({ key: der, format: "der", type: "pkcs8" });
+    } else {
+      const pem = Buffer.from(raw, "base64").toString("utf8");
+      cachedPrivateKey = createPrivateKey(pem);
+    }
   }
   return cachedPrivateKey;
 }

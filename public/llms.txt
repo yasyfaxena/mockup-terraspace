@@ -1,0 +1,19 @@
+# TerraSpace
+
+> TerraSpace is an on-demand workspace reservation platform with real-time slot scheduling, Google Calendar synchronization, and PayBridge-hosted checkout (Xendit and Midtrans).
+
+## Payment Provider (PayBridge)
+
+- Sandbox Base URL: https://paybridge-sandbox.ardial.my.id
+- Production Base URL: https://paybridge.ardial.my.id
+- PayBridge Documentation: https://paybridge.ardial.my.id/docs/integration.md
+- PayBridge LLM Guide: https://paybridge.ardial.my.id/llms.txt
+- Platform Signing Key (Sandbox): https://paybridge-sandbox.ardial.my.id/.well-known/paybridge-signing-key.json
+- Platform Signing Key (Production): https://paybridge.ardial.my.id/.well-known/paybridge-signing-key.json
+
+## Webhooks
+
+- PayBridge Callback Endpoint: POST /webhooks/paybridge
+- Registered Callback URL: https://animator-ageless-moonstone.ngrok-free.dev/webhooks/paybridge
+- Handled Events: payment_succeeded, payment_failed, payment_expired, subscription_cycle_succeeded, subscription_cycle_failed, subscription_cycle_retrying
+- Authentication: Ed25519 request signature verified against PayBridge platform public key
