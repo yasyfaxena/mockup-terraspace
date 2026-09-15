@@ -36,12 +36,19 @@ function toTimeString(value) {
 }
 
 /**
- * @param {{ status: string }} booking
+ * The cancellation-window cutoff only ever applies once a booking is
+ * actually paid for — an unpaid `pending` booking carries no revenue risk,
+ * so it stays cancellable right up until payment succeeds regardless of
+ * how close the session start is (bookings.md §4).
+ * @param {{ status: string, paymentStatus: string }} booking
  * @param {boolean} closed
  * @returns {boolean}
  */
 function canCancelFrom(booking, closed) {
-  return !closed && booking.status !== "cancelled" && booking.status !== "completed";
+  const windowApplies = booking.paymentStatus === "paid";
+  return (
+    (!windowApplies || !closed) && booking.status !== "cancelled" && booking.status !== "completed"
+  );
 }
 
 /**

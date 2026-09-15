@@ -8,6 +8,7 @@ import {
   updateAdminBookingSchema,
   listAdminBookingsQuerySchema,
   calendarQuerySchema,
+  deleteBookingQuerySchema,
 } from "./bookings.schema.js";
 import {
   create,
@@ -62,4 +63,9 @@ adminBookingsRouter.patch(
   validate({ body: updateAdminBookingSchema }),
   updateAdmin,
 );
-adminBookingsRouter.delete("/:id", ...requireAdmin, remove);
+adminBookingsRouter.delete(
+  "/:id",
+  ...requireAdmin,
+  validate({ query: deleteBookingQuerySchema }),
+  remove,
+);

@@ -71,3 +71,23 @@ export function fromMinor(amountMinor, currency) {
 export function toDecimal(value) {
   return new Decimal(value);
 }
+
+const MINUTES_PER_HOUR_FOR_DISPLAY = 60;
+
+/**
+ * Turns a raw hour count (e.g. `2.8333333333333335`, from
+ * `computeDurationHours`) into human copy like `"2h 50m"`. Anywhere a
+ * duration in hours is shown to a person — including third-party
+ * surfaces like a PayBridge line-item name — should go through this
+ * rather than interpolating the raw float with an `h` suffix.
+ * @param {number | string} hours
+ * @returns {string}
+ */
+export function formatDurationHours(hours) {
+  const totalMinutes = Math.round(Number(hours) * MINUTES_PER_HOUR_FOR_DISPLAY);
+  const wholeHours = Math.floor(totalMinutes / MINUTES_PER_HOUR_FOR_DISPLAY);
+  const minutes = totalMinutes % MINUTES_PER_HOUR_FOR_DISPLAY;
+  if (wholeHours > 0 && minutes > 0) return `${wholeHours}h ${minutes}m`;
+  if (wholeHours > 0) return `${wholeHours}h`;
+  return `${minutes}m`;
+}

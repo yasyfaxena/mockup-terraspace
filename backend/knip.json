@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": ["src/server.js"],
+  "project": ["src/**/*.js"],
+  "ignoreDependencies": [
+    "pino-pretty",
+    "@react-email/components",
+    "react-email",
+    "@better-auth/cli",
+    "lint-staged",
+    "husky",
+    "typescript"
+  ]
+}

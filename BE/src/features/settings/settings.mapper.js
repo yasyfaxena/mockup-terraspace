@@ -15,6 +15,8 @@ export function toPublicSettingsDto(settings) {
   return {
     companyName: settings.companyName,
     supportEmail: settings.supportEmail,
+    heroHeadline: settings.heroHeadline,
+    heroBackgroundUrl: settings.heroBackgroundUrl,
     currency: settings.currency,
     currencyExponent: CURRENCY_EXPONENT[settings.currency],
     taxPercent: settings.taxPercent.toFixed(TAX_PERCENT_DECIMALS),
@@ -33,6 +35,8 @@ export function toAdminSettingsDto(settings) {
   return {
     companyName: settings.companyName,
     supportEmail: settings.supportEmail,
+    heroHeadline: settings.heroHeadline,
+    heroBackgroundUrl: settings.heroBackgroundUrl,
     currency: settings.currency,
     taxPercent: settings.taxPercent.toFixed(TAX_PERCENT_DECIMALS),
     cancellationWindowHours: settings.cancellationWindowHours,

@@ -20,6 +20,7 @@ import {
   LocationInactiveError,
   CancellationWindowClosedError,
   BookingAlreadyCancelledError,
+  BookingHasSettledPaymentError,
 } from "./bookings.errors.js";
 import {
   toBookingListDto,
@@ -35,6 +36,8 @@ import {
 const BOOKABLE_AVAILABILITIES = ["available", "limited"];
 const STAFF_ROLES = ["staff", "admin"];
 const BOOKING_NOT_FOUND_MESSAGE = "Booking not found.";
+/** Money actually moved — deleting these silently would destroy the ledger. */
+const SETTLED_PAYMENT_STATES = new Set(["paid", "refunded", "partially_refunded"]);
 const ISO_TIME_START = 11;
 const ISO_TIME_END = 16;
 const MINUTES_PER_HOUR = 60;
@@ -266,7 +269,13 @@ export class BookingsService {
 
     const settings = await this.settings.getSettings();
     const timezone = booking.workspace.location.timezone;
-    if (isCancellationWindowClosed(booking, timezone, settings.cancellationWindowHours)) {
+    // The window only gates paid bookings — an unpaid `pending` booking has
+    // no revenue at risk, so it can always be cancelled up until payment
+    // succeeds (bookings.md §4).
+    if (
+      booking.paymentStatus === "paid" &&
+      isCancellationWindowClosed(booking, timezone, settings.cancellationWindowHours)
+    ) {
       throw new CancellationWindowClosedError(settings.cancellationWindowHours);
     }
 
@@ -386,13 +395,29 @@ export class BookingsService {
 
   /**
    * Hard delete. Admin only — prefer {@link cancel} (bookings.md §9).
+   *
+   * `payments` / `payment_events` / `refunds` FK-reference the booking with
+   * ON DELETE RESTRICT, so the repository clears them in the same
+   * transaction — otherwise any booking that ever reached checkout is
+   * undeletable (P2003 → a bare 409 CONFLICT). A *settled* payment is a
+   * financial record, so that case is refused unless `force` is passed.
    * @param {string} id
+   * @param {{ force?: boolean }} [options]
    * @throws {NotFoundError}
+   * @throws {BookingHasSettledPaymentError}
    * @returns {Promise<{ success: true }>}
    */
-  async remove(id) {
+  async remove(id, options = {}) {
     const booking = await this.repo.findById(id);
     if (!booking) throw new NotFoundError(BOOKING_NOT_FOUND_MESSAGE);
+
+    if (!options.force) {
+      const payments = await this.repo.findPaymentStates(id);
+      if (payments.some((p) => SETTLED_PAYMENT_STATES.has(p.status))) {
+        throw new BookingHasSettledPaymentError();
+      }
+    }
+
     await this.repo.delete(id);
     return { success: true };
   }

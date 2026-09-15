@@ -3,7 +3,7 @@ import { Clock, MapPin, ShieldCheck } from "lucide-react";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LocationMap, locationDetailQueryOptions, useLocation } from "@/features/locations";
-import { AvailabilityBadge, WorkspaceCard } from "@/features/workspaces";
+import { AvailabilityBadge, WorkspaceCard, workspaceTypeLabel } from "@/features/workspaces";
 import { formatMoney } from "@/shared/format";
 import { ApiError } from "@/lib/api-client";
 
@@ -125,7 +125,7 @@ function LocationDetailPage() {
               key={type}
               className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 shadow-[var(--shadow-soft)]"
             >
-              <span className="text-xs font-bold text-foreground">{type}</span>
+              <span className="text-xs font-bold text-foreground">{workspaceTypeLabel(type)}</span>
               <AvailabilityBadge
                 status={count === 0 ? "full" : count <= 3 ? "limited" : "available"}
                 label={count === 0 ? "Fully booked" : `${count} available`}

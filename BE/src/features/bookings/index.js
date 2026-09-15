@@ -19,4 +19,5 @@ export {
   listBookingsQuerySchema,
   listAdminBookingsQuerySchema,
   calendarQuerySchema,
+  deleteBookingQuerySchema,
 } from "./bookings.schema.js";

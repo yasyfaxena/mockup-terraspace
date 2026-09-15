@@ -2,6 +2,8 @@
  * @typedef {object} PublicSettingsDto
  * @property {string} companyName
  * @property {string | null} supportEmail
+ * @property {string} heroHeadline
+ * @property {string | null} heroBackgroundUrl
  * @property {string} currency
  * @property {number} currencyExponent
  * @property {string} taxPercent
@@ -15,6 +17,8 @@
  * @typedef {object} AdminSettingsDto
  * @property {string} companyName
  * @property {string | null} supportEmail
+ * @property {string} heroHeadline
+ * @property {string | null} heroBackgroundUrl
  * @property {string} currency
  * @property {string} taxPercent
  * @property {number} cancellationWindowHours

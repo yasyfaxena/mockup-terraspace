@@ -1,0 +1,130 @@
+import { useRef, useState } from "react";
+import { ImagePlus, X } from "lucide-react";
+
+const labelCls = "text-xs font-semibold text-foreground";
+
+/** Reads and optimizes an image File as a compressed base64 data URL */
+function processImageFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX_DIM = 1600;
+        let { width, height } = img;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          } else {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(String(reader.result));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const format = file.type === "image/png" ? "image/png" : "image/jpeg";
+        resolve(canvas.toDataURL(format, 0.85));
+      };
+      img.onerror = () => resolve(String(reader.result));
+      img.src = String(reader.result);
+    };
+    reader.onerror = () => reject(new Error("Could not read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Business-agnostic image input — a pasted URL or a local file converted to
+ * a `data:` URI client-side (features/workspaces.md §4, features/locations.md
+ * §6). Not feature-owned: lives in components/admin-fields/.
+ */
+export function ImageField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleFile(file: File | undefined) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("File must be an image.");
+      return;
+    }
+    setError(null);
+    setUploading(true);
+    try {
+      onChange(await processImageFile(file));
+    } catch {
+      setError("Failed to read file.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="grid gap-1.5">
+      <span className={labelCls}>{label}</span>
+
+      {value ? (
+        <div className="relative w-full overflow-hidden rounded-lg border border-border bg-muted/20">
+          <img src={value} alt="Image preview" className="h-32 w-full object-cover" />
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="absolute right-1.5 top-1.5 flex items-center justify-center rounded-full bg-black/60 p-1 text-white transition-colors hover:bg-black/80"
+            title="Remove image"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="flex h-24 w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-input bg-muted/30 text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted/50 hover:text-foreground cursor-pointer"
+        >
+          <ImagePlus className="size-5" />
+          <span className="text-xs font-medium">
+            {uploading ? "Uploading…" : "Click to upload an image"}
+          </span>
+        </button>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) => void handleFile(event.target.files?.[0])}
+      />
+
+      <div className="flex items-center gap-2">
+        <span className="shrink-0 text-xs font-medium text-muted-foreground">or URL</span>
+        <input
+          type="text"
+          value={value.startsWith("data:") ? "" : value}
+          placeholder={value.startsWith("data:") ? "(uploaded file)" : "https://…"}
+          onChange={(event) => onChange(event.target.value)}
+          className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-xs text-foreground shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        />
+      </div>
+
+      {error && <span className="text-xs text-destructive">{error}</span>}
+    </div>
+  );
+}

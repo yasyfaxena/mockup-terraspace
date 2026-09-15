@@ -2,10 +2,11 @@ import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
+  GripHorizontal,
   Loader2,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,8 @@ import { useWorkspaceAvailability } from "../workspaces.queries";
 
 const HOUR_HEIGHT_PX = 58;
 const TOP_CLEARANCE_PX = 24;
+// How finely the selection snaps while dragging (minutes).
+const SNAP_MINUTES = 15;
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -21,6 +24,23 @@ function todayISO() {
 function timeToMinutes(time: string): number {
   const [hours = 0, minutes = 0] = time.split(":").map(Number);
   return hours * 60 + minutes;
+}
+
+function minutesToTime(minutes: number): string {
+  const clamped = Math.max(0, Math.round(minutes));
+  const h = Math.floor(clamped / 60) % 24;
+  const m = clamped % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+type DragMode = "move" | "resize-start" | "resize-end";
+
+interface DragState {
+  mode: DragMode;
+  pointerId: number;
+  originY: number;
+  originStart: number;
+  originEnd: number;
 }
 
 function shiftDate(date: string, days: number): string {
@@ -56,6 +76,7 @@ export function AvailabilityCalendar({
   selectedStart,
   selectedEnd,
   onSelectSlot,
+  minDurationMinutes = 30,
 }: {
   workspaceId: string;
   selectedDate?: string;
@@ -63,11 +84,14 @@ export function AvailabilityCalendar({
   selectedStart?: string;
   selectedEnd?: string;
   onSelectSlot?: (start: string, end: string) => void;
+  /** Smallest allowed selection length while dragging/resizing, in minutes. */
+  minDurationMinutes?: number;
 }) {
   const [internalDate, setInternalDate] = useState(todayISO());
   const date = controlledDate ?? internalDate;
   const setDate = onDateChange ?? setInternalDate;
   const { data, isPending, isError, isFetching } = useWorkspaceAvailability(workspaceId, date);
+  const [drag, setDrag] = useState<DragState | null>(null);
 
   const openStart = data ? timeToMinutes(data.openingHours.from) : 9 * 60;
   const openEnd = data ? timeToMinutes(data.openingHours.to) : 22 * 60;
@@ -106,6 +130,64 @@ export function AvailabilityCalendar({
         return startMin < bEnd && endMin > bStart;
       }),
     );
+
+  const beginDrag = useCallback(
+    (mode: DragMode) => (e: React.PointerEvent) => {
+      if (!onSelectSlot || startMin === null || endMin === null) return;
+      e.preventDefault();
+      e.stopPropagation();
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      setDrag({
+        mode,
+        pointerId: e.pointerId,
+        originY: e.clientY,
+        originStart: startMin,
+        originEnd: endMin,
+      });
+    },
+    [onSelectSlot, startMin, endMin],
+  );
+
+  useEffect(() => {
+    if (!drag || !onSelectSlot) return;
+
+    const snap = (value: number) => Math.round(value / SNAP_MINUTES) * SNAP_MINUTES;
+    const clamp = (value: number) => Math.min(Math.max(value, openStart), openEnd);
+
+    function handleMove(e: PointerEvent) {
+      if (!drag || e.pointerId !== drag.pointerId) return;
+      const deltaMinutes = ((e.clientY - drag.originY) / HOUR_HEIGHT_PX) * 60;
+
+      if (drag.mode === "move") {
+        const duration = drag.originEnd - drag.originStart;
+        let newStart = snap(drag.originStart + deltaMinutes);
+        newStart = Math.min(Math.max(newStart, openStart), openEnd - duration);
+        onSelectSlot?.(minutesToTime(newStart), minutesToTime(newStart + duration));
+      } else if (drag.mode === "resize-start") {
+        let newStart = clamp(snap(drag.originStart + deltaMinutes));
+        newStart = Math.min(newStart, drag.originEnd - minDurationMinutes);
+        onSelectSlot?.(minutesToTime(newStart), minutesToTime(drag.originEnd));
+      } else {
+        let newEnd = clamp(snap(drag.originEnd + deltaMinutes));
+        newEnd = Math.max(newEnd, drag.originStart + minDurationMinutes);
+        onSelectSlot?.(minutesToTime(drag.originStart), minutesToTime(newEnd));
+      }
+    }
+
+    function endDrag(e: PointerEvent) {
+      if (e.pointerId !== drag?.pointerId) return;
+      setDrag(null);
+    }
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", endDrag);
+      window.removeEventListener("pointercancel", endDrag);
+    };
+  }, [drag, onSelectSlot, openStart, openEnd, minDurationMinutes]);
 
   return (
     <div className="mt-10 rounded-2xl border border-border/90 bg-card p-5 shadow-[var(--shadow-soft)] sm:p-6">
@@ -291,11 +373,13 @@ export function AvailabilityCalendar({
                 );
               })}
 
-              {/* Real-time preview of current booking selection */}
+              {/* Real-time preview of current booking selection — draggable & resizable */}
               {hasValidSelection && selectionBlock && (
                 <div
                   className={cn(
-                    "absolute inset-x-2 z-20 rounded-xl border-2 p-2.5 text-xs shadow-lg transition-all duration-300 ease-out backdrop-blur-xs",
+                    "group absolute inset-x-2 z-20 rounded-xl border-2 p-2.5 text-xs shadow-lg backdrop-blur-xs touch-none",
+                    !drag && "transition-all duration-300 ease-out",
+                    onSelectSlot && (drag?.mode === "move" ? "cursor-grabbing" : "cursor-grab"),
                     selectionConflict
                       ? "border-amber-500 bg-amber-500/15 text-amber-900 ring-2 ring-amber-500/30 dark:text-amber-200"
                       : "border-primary bg-primary/15 text-primary ring-2 ring-primary/40 shadow-primary/20",
@@ -304,7 +388,18 @@ export function AvailabilityCalendar({
                     top: `${selectionBlock.top}px`,
                     height: `${selectionBlock.height}px`,
                   }}
+                  onPointerDown={beginDrag("move")}
                 >
+                  {/* Top edge handle — drag to adjust start time */}
+                  {onSelectSlot && (
+                    <div
+                      onPointerDown={beginDrag("resize-start")}
+                      className="absolute inset-x-0 -top-1.5 flex h-3.5 cursor-ns-resize items-center justify-center"
+                    >
+                      <GripHorizontal className="size-3 rounded-sm bg-background/90 text-current opacity-0 shadow-xs transition-opacity group-hover:opacity-100" />
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between gap-1.5 font-bold">
                     <div className="flex items-center gap-1.5">
                       {selectionConflict ? (
@@ -330,8 +425,18 @@ export function AvailabilityCalendar({
                     </p>
                   ) : (
                     <p className="mt-0.5 text-[11px] opacity-90">
-                      Live selection preview · Bookable
+                      Drag the box to move it, or the top/bottom edge to resize · Bookable
                     </p>
+                  )}
+
+                  {/* Bottom edge handle — drag to adjust end time */}
+                  {onSelectSlot && (
+                    <div
+                      onPointerDown={beginDrag("resize-end")}
+                      className="absolute inset-x-0 -bottom-1.5 flex h-3.5 cursor-ns-resize items-center justify-center"
+                    >
+                      <GripHorizontal className="size-3 rounded-sm bg-background/90 text-current opacity-0 shadow-xs transition-opacity group-hover:opacity-100" />
+                    </div>
                   )}
                 </div>
               )}

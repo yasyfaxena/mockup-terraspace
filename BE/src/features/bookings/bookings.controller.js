@@ -84,7 +84,8 @@ export const updateAdmin = async (req, res, next) => {
 /** @type {import("express").RequestHandler} */
 export const remove = async (req, res, next) => {
   try {
-    return res.json(await bookingsService.remove(stringParam(req, "id")));
+    const { force } = /** @type {any} */ (req).validatedQuery;
+    return res.json(await bookingsService.remove(stringParam(req, "id"), { force }));
   } catch (err) {
     return next(err);
   }

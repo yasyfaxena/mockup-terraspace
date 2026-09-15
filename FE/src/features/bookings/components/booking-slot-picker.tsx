@@ -1,14 +1,19 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSession } from "@/features/auth";
-import { formatMoney } from "@/shared/format";
+import { formatDuration, formatMoney } from "@/shared/format";
 import { useBookingPrice } from "../pricing/use-booking-price";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
+}
+
+/** Browser-local combination of date + "HH:MM", same approach as bookings.time.ts. */
+function toLocalInstant(date: string, time: string): Date {
+  return new Date(`${date}T${time}:00`);
 }
 
 /**
@@ -59,6 +64,16 @@ export function BookingSlotPicker({
   const price = useBookingPrice({ startTime, endTime, unitPrice: pricePerHour, taxPercent });
   const isValidDuration = price.durationHours * 60 >= minimumDurationMinutes;
 
+  // Keep "now" fresh so a slot that was valid becomes blocked once its start
+  // time actually passes while the user is sitting on this page.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const isPastStart = toLocalInstant(date, startTime).getTime() <= now;
+
   return (
     <div className="mt-5 space-y-3 border-t border-border pt-5">
       <div className="grid gap-1.5">
@@ -98,9 +113,15 @@ export function BookingSlotPicker({
         </p>
       )}
 
+      {isValidDuration && isPastStart && (
+        <p role="alert" className="text-xs text-destructive">
+          This time has already passed. Please pick an upcoming time.
+        </p>
+      )}
+
       <div className="rounded-lg bg-surface p-3 text-xs">
         <div className="flex justify-between text-muted-foreground">
-          <span>Subtotal ({price.durationHours}h)</span>
+          <span>Subtotal ({formatDuration(price.durationHours * 60)})</span>
           <span>{formatMoney(price.subtotalAmount)}</span>
         </div>
         <div className="mt-1 flex justify-between text-muted-foreground">
@@ -120,7 +141,7 @@ export function BookingSlotPicker({
       ) : data?.session ? (
         <Button
           className="w-full bg-galaxy-accent font-semibold"
-          disabled={!isValidDuration}
+          disabled={!isValidDuration || isPastStart}
           onClick={() =>
             void navigate({
               to: "/booking/review",

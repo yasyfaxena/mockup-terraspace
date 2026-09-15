@@ -90,6 +90,7 @@ function DashboardPage() {
                       )
                     : null
                 }
+                cancellationWindowHours={settings?.cancellationWindowHours ?? null}
                 onCancel={setCancelling}
               />
             ))}

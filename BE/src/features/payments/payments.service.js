@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { bookingsService as defaultBookingsService } from "../bookings/index.js";
 import { NotFoundError, ProviderError, ProviderTimeout } from "../../shared/errors/http-errors.js";
 import { toPaginationMeta } from "../../shared/lib/pagination.js";
-import { toMinor, fromMinor, toDecimal } from "../../shared/lib/money.js";
+import { toMinor, fromMinor, toDecimal, formatDurationHours } from "../../shared/lib/money.js";
 import { logger } from "../../shared/lib/logger.js";
 import { PaymentsRepository } from "./payments.repository.js";
 import * as defaultPaybridgeClient from "./paybridge.client.js";
@@ -185,7 +185,7 @@ export class PaymentsService {
         description: `TerraSpace booking ${booking.reference} — ${booking.workspace.name}, ${formatBookingWhen(booking)}`,
         items: [
           {
-            name: `${booking.workspace.name} (${booking.durationHours}h)`,
+            name: `${booking.workspace.name} (${formatDurationHours(booking.durationHours)})`,
             quantity: 1,
             price: Number(subtotalMinor),
             description: booking.workspace.location.name,

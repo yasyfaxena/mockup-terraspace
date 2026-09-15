@@ -16,10 +16,12 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { amenitiesListQueryOptions, useAmenities } from "@/features/amenities";
+import { useLocations } from "@/features/locations";
 import {
   useWorkspaces,
   workspacesListQueryOptions,
   WorkspaceCard,
+  WORKSPACE_TYPE_OPTIONS as WORKSPACE_TYPES,
   type WorkspaceType,
 } from "@/features/workspaces";
 import { formatMoney } from "@/shared/format";
@@ -61,20 +63,14 @@ export const Route = createFileRoute("/workspaces/")({
   component: WorkspacesPage,
 });
 
-const WORKSPACE_TYPES: { value: WorkspaceType; label: string }[] = [
-  { value: "hot_desk", label: "Hot desk" },
-  { value: "dedicated_desk", label: "Dedicated desk" },
-  { value: "private_office", label: "Private office" },
-  { value: "meeting_room", label: "Meeting room" },
-  { value: "event_space", label: "Event space" },
-];
-
 function WorkspacesPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const { data: amenitiesData } = useAmenities();
   const amenities = amenitiesData?.data ?? [];
   const amenityIds = toParams(search).amenityId ?? [];
+  const { data: locationsData } = useLocations();
+  const locations = locationsData?.data ?? [];
 
   const [minInput, setMinInput] = useState(search.minPrice != null ? String(search.minPrice) : "");
   const [maxInput, setMaxInput] = useState(search.maxPrice != null ? String(search.maxPrice) : "");
@@ -333,7 +329,8 @@ function WorkspacesPage() {
               <span className="text-[11px] font-medium text-muted-foreground">Active:</span>
               {search.location && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
-                  Location: {search.location}
+                  Location:{" "}
+                  {locations.find((l) => l.slug === search.location)?.name ?? search.location}
                   <button
                     type="button"
                     onClick={() => updateSearch({ location: undefined })}

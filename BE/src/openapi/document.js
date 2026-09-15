@@ -26,6 +26,7 @@ import {
   listBookingsQuerySchema,
   listAdminBookingsQuerySchema,
   calendarQuerySchema,
+  deleteBookingQuerySchema,
 } from "../features/bookings/index.js";
 import {
   paymentMethodsQuerySchema,
@@ -352,6 +353,7 @@ const ROUTES = [
     summary: "Admin: delete a booking",
     security: SESSION_COOKIE,
     params: idParam,
+    query: deleteBookingQuerySchema,
     successStatus: 204,
   },
 

@@ -75,6 +75,17 @@ export const listAdminBookingsQuerySchema = paginationQuerySchema.extend({
   order: z.enum(["asc", "desc"]).default("desc"),
 });
 
+/**
+ * `?force=true` lets an admin destroy a booking together with its settled
+ * payment rows. Absent or `false` keeps the safe behaviour.
+ */
+export const deleteBookingQuerySchema = z.object({
+  force: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
+});
+
 export const calendarQuerySchema = z
   .object({
     from: bookingDateField,

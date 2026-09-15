@@ -12,7 +12,7 @@ import { requireAuth } from "@/features/auth";
 import { useBookingPrice, useCreateBooking } from "@/features/bookings";
 import { workspaceDetailQueryOptions, useWorkspace } from "@/features/workspaces";
 import { queryKeys } from "@/shared/query-keys";
-import { formatMoney } from "@/shared/format";
+import { formatDuration, formatMoney } from "@/shared/format";
 
 const reviewSearchSchema = z.object({
   workspaceId: z.string(),
@@ -110,7 +110,7 @@ function BookingReviewPage() {
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Time</dt>
                 <dd className="font-medium text-foreground">
-                  {search.start} – {search.end} ({price.durationHours}h)
+                  {search.start} – {search.end} ({formatDuration(price.durationHours * 60)})
                 </dd>
               </div>
             </dl>

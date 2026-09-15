@@ -8,6 +8,7 @@ import {
   AvailabilityCalendar,
   useWorkspace,
   workspaceDetailQueryOptions,
+  workspaceTypeLabel,
 } from "@/features/workspaces";
 import { BookingSlotPicker } from "@/features/bookings";
 import { formatMoney } from "@/shared/format";
@@ -84,7 +85,7 @@ function WorkspaceDetailPage() {
 
             <div className="mt-6 flex flex-wrap items-center gap-2">
               <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                {workspace.type}
+                {workspaceTypeLabel(workspace.type)}
               </span>
               <AvailabilityBadge status={workspace.availability} />
             </div>

@@ -59,6 +59,16 @@ export class CancellationWindowClosedError extends ForbiddenError {
   }
 }
 
+export class BookingHasSettledPaymentError extends ConflictError {
+  /** @type {string} */
+  code = ERROR_CODE.BOOKING_HAS_SETTLED_PAYMENT;
+  constructor() {
+    super(
+      "This booking has a paid or refunded payment attached. Cancel or refund it instead, or delete with ?force=true to destroy the payment record too.",
+    );
+  }
+}
+
 export class BookingAlreadyCancelledError extends ConflictError {
   /** @type {string} */
   code = ERROR_CODE.BOOKING_ALREADY_CANCELLED;

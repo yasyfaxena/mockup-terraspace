@@ -260,12 +260,46 @@ export class BookingsRepository {
   }
 
   /**
+   * Payment rows attached to a booking — status only, which is all the
+   * admin-delete guard needs to decide between a clean delete and a
+   * `BOOKING_HAS_SETTLED_PAYMENT` refusal.
+   * @param {string} id
+   * @returns {Promise<Array<{ id: string, status: string }>>}
+   */
+  findPaymentStates(id) {
+    return this.db.payment.findMany({
+      where: { bookingId: id },
+      select: { id: true, status: true },
+    });
+  }
+
+  /**
    * Hard delete — admin only (bookings.md §9).
+   *
+   * `payments`, `payment_events` and `refunds` all FK-reference this row
+   * with ON DELETE RESTRICT, so a bare `booking.delete()` fails with
+   * P2003 the moment a checkout has ever been started — even one that
+   * never got paid. Postgres won't clean them up for us, so we do it
+   * ourselves, children first, in one transaction.
    * @param {string} id
    * @returns {Promise<import("@prisma/client").Booking>}
    */
   delete(id) {
-    return this.db.booking.delete({ where: { id } });
+    return this.db.$transaction(async (tx) => {
+      const payments = await tx.payment.findMany({
+        where: { bookingId: id },
+        select: { id: true },
+      });
+      const paymentIds = payments.map((p) => p.id);
+
+      if (paymentIds.length > 0) {
+        await tx.refund.deleteMany({ where: { paymentId: { in: paymentIds } } });
+        await tx.paymentEvent.deleteMany({ where: { paymentId: { in: paymentIds } } });
+        await tx.payment.deleteMany({ where: { bookingId: id } });
+      }
+
+      return tx.booking.delete({ where: { id } });
+    });
   }
 
   /**
